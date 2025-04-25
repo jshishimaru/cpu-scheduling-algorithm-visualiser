@@ -1,0 +1,155 @@
+.App {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  color: #333;
+}
+
+/* ProcessForm styles */
+.process-form {
+  margin-bottom: 30px;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.process-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.process-row input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+button {
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button[type="button"] {
+  background-color: #2196F3;
+}
+
+button[type="button"]:hover {
+  background-color: #0b7dda;
+}
+
+/* GanttChart styles */
+.gantt-chart-container {
+  margin-top: 30px;
+}
+
+.gantt-chart {
+  position: relative;
+  height: 200px;
+  border: 1px solid #ddd;
+  margin-top: 20px;
+  background-color: #f5f5f5;
+}
+
+.timeline {
+  position: relative;
+  height: 30px;
+  border-bottom: 1px solid #ccc;
+}
+
+.time-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #666;
+  top: 5px;
+}
+
+.process-bars {
+  position: relative;
+  height: 170px;
+}
+
+.process-bar {
+  position: absolute;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.process-label {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metrics {
+  margin-top: 30px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+table th {
+  background-color: #f2f2f2;
+}
+
+/* Algorithm Selector styles */
+.algorithm-selector {
+  margin-bottom: 20px;
+}
+
+.algorithm-selector select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  width: 300px;
+}
+
+/* Error message styling */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #c62828;
+}
