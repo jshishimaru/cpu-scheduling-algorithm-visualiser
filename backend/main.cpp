@@ -1,10 +1,5 @@
 #include "Parser.hpp"
-#include "algorithms/FCFS.hpp"
-#include "json.hpp"
 #include <iostream>
-#include <vector>
-#include <string>
-
 using namespace std;
 
 int main() {
@@ -12,11 +7,23 @@ int main() {
 
     try {
         vector<Process> processes = Parser::getProcesses(json_file_path);
+        cout << "Processes:\n";
+        for (const auto& process : processes) {
+            cout << "Process ID: " << process.p_id
+                      << ", Arrival Time: " << process.arrival_time
+                      << ", Burst Time: " << process.burst_time
+                      << ", Priority: " << process.priority << "\n";
+        }
 
-        FCFS fcfs;
-        nlohmann::json schedule_result = fcfs.schedule(processes);
+        int time_slice = Parser::getTimeSlice(json_file_path);
+        cout << "Time Slice: " << time_slice << "\n";
 
-        cout << schedule_result.dump(4) << endl;
+        int num_of_queues = Parser::getNumOfQueues(json_file_path);
+        cout << "Number of Queues: " << num_of_queues << "\n";
+
+        string scheduling_algorithm = Parser::getSchedulingAlgorithm(json_file_path);
+        cout << "Scheduling Algorithm: " << scheduling_algorithm << "\n";
+
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << "\n";
     }
