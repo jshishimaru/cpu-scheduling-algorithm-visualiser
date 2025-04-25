@@ -1,5 +1,5 @@
 {
-    "scheduling_type": "RoundRobin",
+    "scheduling_type": "FCFS",
     "time_slice": 4,
     "processes": [
       {
