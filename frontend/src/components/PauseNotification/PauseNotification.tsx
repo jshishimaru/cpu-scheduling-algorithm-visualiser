@@ -5,6 +5,9 @@ interface PauseNotificationProps {
 }
 
 const PauseNotification: React.FC<PauseNotificationProps> = ({ pausedTime }) => {
+  // Ensure pausedTime is a valid number to prevent toFixed errors
+  const safeTime = typeof pausedTime === 'number' && !isNaN(pausedTime) ? pausedTime : 0;
+  
   return (
     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-5">
       <div className="flex">
@@ -15,7 +18,7 @@ const PauseNotification: React.FC<PauseNotificationProps> = ({ pausedTime }) => 
         </div>
         <div className="ml-3">
           <p className="text-sm text-yellow-700">
-            Simulation paused at time {pausedTime.toFixed(1)}. Add new processes below and reschedule.
+            Simulation paused at time {safeTime.toFixed(1)}. Add new processes below and reschedule.
           </p>
         </div>
       </div>

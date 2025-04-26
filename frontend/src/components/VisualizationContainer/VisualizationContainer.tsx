@@ -17,10 +17,10 @@ interface VisualizationContainerProps {
 
 const VisualizationContainer: React.FC<VisualizationContainerProps> = ({ 
   schedulerData,
-  ganttData,
+  isPaused = false,
   onPause,
   onResume,
-  onReset
+  ganttData
 }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [internalPaused, setInternalPaused] = useState(isPaused);

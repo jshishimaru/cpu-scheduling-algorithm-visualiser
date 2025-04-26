@@ -25,8 +25,8 @@ const ProcessManager: React.FC<ProcessManagerProps> = ({
   const [newProcesses, setNewProcesses] = useState<NewProcessData[]>([]);
   const [nextProcessId, setNextProcessId] = useState<number>(
     schedulerData.process_stats ? 
-      Math.max(...schedulerData.process_stats.map(p => p.process_id)) + 1 : 
-      0
+    Math.max(...schedulerData.process_stats.map(p => p.process_id), 0) + 1 : 
+    0
   );
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>(
     schedulerData.scheduling_algorithm || 'FCFS'
@@ -41,8 +41,15 @@ const ProcessManager: React.FC<ProcessManagerProps> = ({
     }
   }, [schedulerData]);
 
+  useEffect(() => {
+    if (schedulerData.scheduling_algorithm) {
+      setSelectedAlgorithm(schedulerData.scheduling_algorithm);
+    }
+  }, [schedulerData]);
+  
   const handleChartPause = (currentTime: number) => {
-    setPausedTime(currentTime);
+    const safeTime = typeof currentTime === 'number' && !isNaN(currentTime) ? currentTime : 0;
+    setPausedTime(safeTime);
     setIsPaused(true);
   };
   
