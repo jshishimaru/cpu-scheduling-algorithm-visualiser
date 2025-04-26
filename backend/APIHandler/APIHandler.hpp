@@ -9,6 +9,7 @@
 #include "../algorithms/RR.hpp"
 #include "../algorithms/Priority.hpp"
 #include "../algorithms/MLQ.hpp"
+#include "../algorithms/MLFQ.hpp"
 #include <vector>
 #include <string>
 
@@ -44,6 +45,12 @@ public:
 
 		CROW_ROUTE(app, "/api/mlq")
 		.methods("POST"_method)(APIHandler::handleMLQSchedule);
+
+        CROW_ROUTE(app, "/api/mlfq")
+        .methods("POST"_method)
+        ([](const crow::request& req) {
+            return APIHandler::handleMLFQSchedule(req);
+        });
     
 	}
     
@@ -188,4 +195,49 @@ public:
 			return crow::response(500, error_json.dump());
 		}
 	}
+
+    static crow::response handleMLFQSchedule(const crow::request& req) {
+        try {
+            auto input_json = json::parse(req.body);
+            
+            // Validate input
+            if (!input_json.contains("processes")) {
+                return crow::response(400, "{\"status\": \"error\", \"message\": \"Missing processes field\"}");
+            }
+            
+            // Parse processes
+            vector<Process> processes;
+            for (const auto& p : input_json["processes"]) {
+                Process process;
+                process.p_id = p["p_id"];
+                process.arrival_time = p["arrival_time"];
+                process.burst_time = p["burst_time"];
+                
+                // Priority is important for MLFQ
+                if (p.contains("priority")) {
+                    process.priority = p["priority"];
+                } else {
+                    process.priority = 0;
+                }
+                
+                processes.push_back(process);
+            }
+            
+            // Get MLFQ specific parameters
+            int num_queues = input_json.value("num_queues", 3);  // Default to 3 queues if not provided
+            int base_quantum = input_json.value("quantum", 2);   // Default base quantum to 2 if not provided
+            
+            // Run MLFQ algorithm
+            MLFQ mlfq(base_quantum, num_queues);
+            json result = mlfq.schedule(processes);
+            
+            return crow::response(200, result.dump());
+        } catch (const std::exception& e) {
+            json error_json = {
+                {"status", "error"},
+                {"message", std::string("Error processing MLFQ request: ") + e.what()}
+            };
+            return crow::response(500, error_json.dump());
+        }
+    }
 };
