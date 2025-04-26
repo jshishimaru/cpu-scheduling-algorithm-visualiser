@@ -24,8 +24,29 @@ public:
         int current_time = 0;
         vector<int> completion_time(sorted.size(), 0);
         
+        
+        if (sorted.empty()) {
+            return result;
+        }
+    
+        if (sorted[0].arrival_time > 0) {
+            nlohmann::json idle_row;
+            idle_row["process_id"] = -1; 
+            idle_row["start_time"] = 0;
+            idle_row["end_time"] = sorted[0].arrival_time;
+            idle_row["ready_queue"] = nlohmann::json::array();
+            gantt_chart.push_back(idle_row);
+            current_time = sorted[0].arrival_time;
+        }
+        
         for (size_t i = 0; i < sorted.size(); i++) {
             if (current_time < sorted[i].arrival_time) {
+                nlohmann::json idle_row;
+                idle_row["process_id"] = -1;  
+                idle_row["start_time"] = current_time;
+                idle_row["end_time"] = sorted[i].arrival_time;
+                idle_row["ready_queue"] = nlohmann::json::array();
+                gantt_chart.push_back(idle_row);
                 current_time = sorted[i].arrival_time;
             }
             
@@ -54,7 +75,7 @@ public:
             sort(arrival_points.begin(), arrival_points.end());
             
             arrival_points.erase(unique(arrival_points.begin(), arrival_points.end()), 
-                               arrival_points.end());
+                              arrival_points.end());
             
             for (size_t j = 1; j < arrival_points.size(); j++) {
                 vector<int> ready_queue;
