@@ -46,7 +46,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
   const [processSegments, setProcessSegments] = useState<any[]>([]);
   const [visibleSegments, setVisibleSegments] = useState<any[]>([]);
   const [animationSpeed, setAnimationSpeed] = useState<number>(speed);
+  const [chartWidth, setChartWidth] = useState<number>(100); // percentage of container width
   const animationRef = useRef<number | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   
   // Calculate total execution time
   const totalExecutionTime = ganttData.length > 0 
@@ -106,6 +108,26 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
     );
     setVisibleSegments(visible);
   }, [currentTime, processSegments]);
+  
+  // Determine chart width based on number of segments and their duration
+  useEffect(() => {
+    if (processSegments.length > 0) {
+      // For many processes or long total duration, make the chart wider
+      const segmentCount = processSegments.length;
+      // Base width starts at 100%, increases with more segments
+      let width = 100;
+      
+      if (segmentCount > 10) {
+        // Each segment over 10 adds 8% width
+        width += (segmentCount - 10) * 8;
+      }
+      
+      // Cap at reasonable maximum (500%)
+      setChartWidth(Math.min(Math.max(width, 100), 500));
+    } else {
+      setChartWidth(100);
+    }
+  }, [processSegments]);
   
   // Animation logic with adjustable speed
   useEffect(() => {
@@ -241,118 +263,152 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
         )}
       </div>
       
-      <div className="relative w-full h-36 bg-gray-50 mb-8 rounded-lg overflow-hidden shadow-inner border border-gray-200 px-6">
-        {/* Main Process Segments */}
-        {visibleSegments.map((segment, index) => {
-          const segmentWidth = ((segment.endTime - segment.startTime) / totalExecutionTime) * 100;
-          const segmentLeft = (segment.startTime / totalExecutionTime) * 100;
-          
-          const filledWidth = currentTime <= segment.startTime
-            ? 0
-            : currentTime >= segment.endTime
-              ? 100
-              : ((currentTime - segment.startTime) / (segment.endTime - segment.startTime)) * 100;
-              
-          const processColorClass = getProcessColor(segment.processId);
-          const borderColorClass = getBorderColor(segment.processId);
-              
-          return (
-            <div 
-              key={index}
-              className={`absolute h-[40px] top-[15px] rounded-md overflow-hidden border-2 ${borderColorClass} shadow-md bg-white/80`}
-              style={{
-                width: `${segmentWidth}%`,
-                left: `${segmentLeft}%`,
-                maxWidth: 'calc(100% - 8px)'  // Prevent overflow at right edge
-              }}
-              title={`Process ${segment.processId}: ${segment.startTime} - ${segment.endTime}`}
-            >
-              {/* Filled portion with translucent color */}
-              <div 
-                className={`absolute h-full ${processColorClass} backdrop-blur-sm transition-all duration-300 ease-out`}
-                style={{ width: `${filledWidth}%` }}
-              />
-              
-              {/* Process label */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-lg">
-                P{segment.processId}
-              </div>
-            </div>
-          );
-        })}
-        
-        {/* Separate Time Bars Section with adjusted positioning */}
-        <div className="absolute top-[70px] left-0 right-0 h-20 px-6">
-          {/* Draw time bars for each segment */}
+      {/* Scrollable container for chart */}
+      <div className="relative w-full overflow-x-auto pb-6 rounded-lg px-4" ref={chartContainerRef}>
+        <div 
+          className="relative h-36 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
+		  style={{
+            // Add padding before first segment and after last segment (5% on each side)
+            paddingLeft: '5%',
+            paddingRight: '5%',
+            width: `${chartWidth + 10}%`  // Add 10% to accommodate the padding
+          }}
+        >
+          {/* Main Process Segments */}
           {visibleSegments.map((segment, index) => {
             const segmentWidth = ((segment.endTime - segment.startTime) / totalExecutionTime) * 100;
             const segmentLeft = (segment.startTime / totalExecutionTime) * 100;
             
+            const filledWidth = currentTime <= segment.startTime
+              ? 0
+              : currentTime >= segment.endTime
+                ? 100
+                : ((currentTime - segment.startTime) / (segment.endTime - segment.startTime)) * 100;
+                
+            const processColorClass = getProcessColor(segment.processId);
+            const borderColorClass = getBorderColor(segment.processId);
+                
             return (
               <div 
-                key={`time-${index}`}
-                className="absolute"
+                key={index}
+                className={`absolute h-[40px] top-[15px] rounded-md overflow-hidden border-2 ${borderColorClass} shadow-md bg-white/80`}
                 style={{
                   width: `${segmentWidth}%`,
                   left: `${segmentLeft}%`,
-                  maxWidth: 'calc(100% - 24px)'  // Prevent overflow at right edge
                 }}
+                title={`Process ${segment.processId}: ${segment.startTime} - ${segment.endTime}`}
               >
-                {/* Time line */}
-                <div className="absolute top-0 w-full h-1 bg-gray-400"></div>
+                {/* Filled portion with translucent color */}
+                <div 
+                  className={`absolute h-full ${processColorClass} backdrop-blur-sm transition-all duration-300 ease-out`}
+                  style={{ width: `${filledWidth}%` }}
+                />
                 
-                {/* Start time marker - adjusted positioning */}
-                <div className="absolute top-3 left-0">
-                  <div className="relative flex flex-col items-center">
-                    <div className="w-1.5 h-5 bg-gray-500 rounded"></div>
-                    <div className="mt-1 px-1.5 py-0.5 bg-white text-xs font-medium text-gray-700 border border-gray-300 rounded shadow-sm whitespace-nowrap">
-                      {segment.startTime.toFixed(1)}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* End time marker - adjusted positioning */}
-                <div className="absolute top-3 right-0">
-                  <div className="relative flex flex-col items-center">
-                    <div className="w-1.5 h-5 bg-gray-500 rounded"></div>
-                    <div className="mt-1 px-1.5 py-0.5 bg-white text-xs font-medium text-gray-700 border border-gray-300 rounded shadow-sm whitespace-nowrap">
-                      {segment.endTime.toFixed(1)}
-                    </div>
-                  </div>
+                {/* Process label */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-lg">
+                  P{segment.processId}
                 </div>
               </div>
             );
           })}
-        </div>
-        
-        {/* Current time indicator - adjusted for container padding */}
-        <div 
-          className="absolute top-0 h-full w-0.5 bg-rose-600 z-20 transition-all duration-100 ease-linear"
-          style={{ 
-            left: `calc(${(currentTime / totalExecutionTime) * 100}% + 24px)`,
-            transform: 'translateX(-24px)'
-          }}
-        >
-          <div className="absolute top-[-18px] left-1/2 transform -translate-x-1/2 text-xs text-white font-bold bg-rose-600 px-2 py-0.5 rounded-md shadow-sm">
-            {currentTime.toFixed(1)}
+          
+          {/* Separate Time Bars Section with adjusted positioning */}
+          <div className="absolute top-[70px] left-0 right-0 h-20 px-8">
+            {/* Create a set of unique time points to avoid duplicates */}
+            {(() => {
+              const timePoints = new Set<number>();
+              
+              // Add start and end times from all segments
+              visibleSegments.forEach(segment => {
+                timePoints.add(segment.startTime);
+                timePoints.add(segment.endTime);
+              });
+              
+              // Convert to sorted array
+              const sortedTimes = Array.from(timePoints).sort((a, b) => a - b);
+              
+              // If too many time points, filter to reasonable number
+              const filteredTimes = sortedTimes.length > 20 
+                ? sortedTimes.filter((_, idx) => idx % Math.ceil(sortedTimes.length / 20) === 0)
+                : sortedTimes;
+              
+              // Render time markers for each unique time point
+              return filteredTimes.map((time, index) => (
+                <div 
+                  key={`time-${index}`}
+                  className="absolute"
+                  style={{
+                    left: `${(time / totalExecutionTime) * 100}%`,
+                  }}
+                >
+                  {/* Time line */}
+                  <div className="absolute top-0 w-0.5 h-5 bg-gray-500 rounded"></div>
+                  
+                  {/* Time label */}
+                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
+                    <div className="px-1.5 py-0.5 bg-white text-xs font-medium text-gray-700 border border-gray-300 rounded shadow-sm whitespace-nowrap">
+                      {time.toFixed(1)}
+                    </div>
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
-        </div>
-        
-        {/* Time markers at the bottom */}
-        <div className="absolute w-full h-5 bottom-[-25px] px-6">
-          {Array.from({ length: Math.ceil(totalExecutionTime) + 1 }, (_, i) => (
-            <div 
-              key={i} 
-              className="absolute h-2.5 w-px bg-gray-400"
-              style={{ left: `${(i / totalExecutionTime) * 100}%` }}
-            >
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-                {i}
-              </div>
+          
+          {/* Current time indicator - adjusted for container padding */}
+          <div 
+            className="absolute top-0 h-full w-0.5 bg-rose-600 z-20 transition-all duration-100 ease-linear"
+            style={{ 
+              left: `${(currentTime / totalExecutionTime) * 100}%`,
+            }}
+          >
+            <div className="absolute top-[-18px] left-1/2 transform -translate-x-1/2 text-xs text-white font-bold bg-rose-600 px-2 py-0.5 rounded-md shadow-sm">
+              {currentTime.toFixed(1)}
             </div>
-          ))}
+          </div>
+          
+          {/* Time markers at the bottom - filter if too many */}
+          {/* <div className="absolute w-full h-5 bottom-[-25px] px-8">
+            {(() => {
+              // Limit number of time markers based on total execution time
+              const maxMarkers = Math.min(Math.ceil(totalExecutionTime) + 1, 30);
+              const step = Math.max(1, Math.ceil(totalExecutionTime / 29));
+              
+              return Array.from({ length: maxMarkers }, (_, i) => {
+                const value = i * step;
+                if (value > totalExecutionTime) return null;
+                
+                return (
+                  <div 
+                    key={i} 
+                    className="absolute h-2.5 w-px bg-gray-400"
+                    style={{ left: `${(value / totalExecutionTime) * 100}%` }}
+                  >
+                    <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                      {value}
+                    </div>
+                  </div>
+                );
+              }).filter(Boolean);
+            })()}
+          </div> */}
         </div>
       </div>
+      
+      {/* Scroll indicator - show only when chart is wider than container */}
+      {/* {chartWidth > 100 && (
+        <div className="flex justify-center mt-2 text-sm text-gray-500">
+          <span className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Scroll horizontally to view the complete chart
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        </div>
+      )} */}
     </div>
   );
 };
