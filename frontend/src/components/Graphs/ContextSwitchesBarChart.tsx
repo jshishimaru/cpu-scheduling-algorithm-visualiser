@@ -36,7 +36,7 @@ const ContextSwitchesBarChart: React.FC<ContextSwitchesBarChartProps> = ({
     let switches = 0;
     for (let i = 1; i < ganttChart.length; i++) {
       // If the current process is different from the previous one, it's a context switch
-      if (ganttChart[i].process_id !== ganttChart[i-1].process_id) {
+      if (ganttChart[i].process_id !== ganttChart[i-1].process_id && ganttChart[i].process_id >= 0) {
         switches++;
       }
     }

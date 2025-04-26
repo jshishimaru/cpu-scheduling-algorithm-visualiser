@@ -28,7 +28,9 @@ const CPUUtilizationPieChart: React.FC<CPUUtilizationPieChartProps> = ({
     // Sum of all process execution times
     let busyTime = 0;
     ganttChart.forEach(entry => {
-      busyTime += entry.end_time - entry.start_time;
+        if (entry.process_id >= 0) {
+            busyTime += entry.end_time - entry.start_time;
+        }
     });
     
     const busyPercentage = (busyTime / totalExecutionTime) * 100;

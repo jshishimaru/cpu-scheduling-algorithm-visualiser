@@ -4,6 +4,8 @@ import NewProcessForm, { NewProcessData } from './components/NewProcessForm/NewP
 import NewProcessTable from './components/NewProcessTable/NewProcessTable';
 import PauseNotification from './components/PauseNotification/PauseNotification';
 import RescheduleButton from './components/RescheduleButton/RescheduleButton';
+import ReadyQueue from './components/Queue/ReadyQueue';
+import InputForm from './components/InputForm/InputForm';
 import { Parser } from './services/parser';
 import { dummySchedulerData, largeDataset } from './data/dummyData';
 import GraphsContainer from './components/Graphs/GraphsContainer';
@@ -86,6 +88,9 @@ function App() {
     <div className="App">
       <header className="bg-gray-800 text-white p-4 mb-6">
         <h1 className="text-3xl font-bold">CPU Scheduler Simulator</h1>
+        {algorithmName && (
+          <p className="text-lg mt-2">Algorithm: <span className="font-semibold">{algorithmName}</span></p>
+        )}
       </header>
       <main className="container mx-auto px-4">
         {/* Simulation paused notification */}
@@ -122,7 +127,7 @@ function App() {
         
       </main>
       <footer className="mt-12 p-4 bg-gray-100 text-center text-gray-600">
-        <p>Real-time CPU Scheduler Simulator &copy; {new Date().getFullYear()}</p>
+        <p>CPU Scheduling Simulator &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>
   );
