@@ -13,19 +13,25 @@ interface GanttChartProps {
 const getProcessColor = (processId: number): string => {
   // Special case for idle process (process ID -1)
   if (processId === -1) {
-    return 'bg-white';
+    return 'bg-gray-200';
   }
   
   const colors = [
-    'bg-indigo-500/40',   // Indigo 
-    'bg-pink-500/40',     // Pink 
-    'bg-teal-500/40',     // Teal 
-    'bg-amber-500/40',    // Amber 
-    'bg-emerald-500/40',  // Emerald 
-    'bg-violet-500/40',   // Violet 
-    'bg-rose-500/40',     // Rose 
-    'bg-lime-500/40',     // Lime 
-    'bg-sky-500/40',      // Sky 
+    'bg-indigo-500/60',   // Indigo 
+    'bg-pink-500/60',     // Pink 
+    'bg-teal-500/60',     // Teal 
+    'bg-amber-500/60',    // Amber 
+    'bg-emerald-500/60',  // Emerald 
+    'bg-violet-500/60',   // Violet 
+    'bg-rose-500/60',     // Rose 
+    'bg-lime-500/60',     // Lime 
+    'bg-sky-500/60',      // Sky 
+    'bg-orange-500/60',   // Orange
+    'bg-cyan-500/60',     // Cyan
+    'bg-fuchsia-500/60',  // Fuchsia
+    'bg-red-500/60',      // Red
+    'bg-blue-500/60',     // Blue
+    'bg-green-500/60',    // Green
   ];
   
   return colors[processId % colors.length];
@@ -35,7 +41,7 @@ const getProcessColor = (processId: number): string => {
 const getBorderColor = (processId: number): string => {
   // Special case for idle process (process ID -1)
   if (processId === -1) {
-    return 'border-gray-300';
+    return 'border-gray-400';
   }
   
   const colors = [
@@ -48,6 +54,12 @@ const getBorderColor = (processId: number): string => {
     'border-rose-600',
     'border-lime-600',
     'border-sky-600',
+    'border-orange-600',
+    'border-cyan-600',
+    'border-fuchsia-600',
+    'border-red-600',
+    'border-blue-600',
+    'border-green-600',
   ];
   
   return colors[processId % colors.length];
@@ -73,6 +85,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
   const totalExecutionTime = ganttData.length > 0 
     ? Math.max(...ganttData.map(entry => entry.end_time))
     : 0;
+  
+  // Initialize with the provided initialTime
+  useEffect(() => {
+    setCurrentTime(initialTime);
+  }, [initialTime]);
   
   // Check if chart is complete
   useEffect(() => {
@@ -124,17 +141,22 @@ const GanttChart: React.FC<GanttChartProps> = ({
     segments.push({ ...currentSegment });
     
     setProcessSegments(segments);
-    // Start with empty visible segments
-    setVisibleSegments([]);
+    
+    // Update visible segments based on current time
+    updateVisibleSegments(segments, currentTime);
   }, [ganttData]);
   
   // Update visible segments as time progresses
-  useEffect(() => {
+  const updateVisibleSegments = (segments: any[], time: number) => {
     // Only show segments that have started by the current time
-    const visible = processSegments.filter(segment => 
-      segment.startTime <= currentTime
+    const visible = segments.filter(segment => 
+      segment.startTime <= time
     );
     setVisibleSegments(visible);
+  };
+  
+  useEffect(() => {
+    updateVisibleSegments(processSegments, currentTime);
   }, [currentTime, processSegments]);
   
   // Determine chart width based on number of segments and their duration
@@ -215,7 +237,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
   
   // Notify parent about initial paused state on component mount
   useEffect(() => {
-    if (!isPlaying && onPause) {
+    if (onPause) {
       onPause(currentTime);
     }
   }, []);
@@ -240,7 +262,6 @@ const GanttChart: React.FC<GanttChartProps> = ({
   
   const handleReset = () => {
     setCurrentTime(0);
-    setVisibleSegments([]);
     setIsPlaying(false); // Start paused after reset
     
     if (onPause) {
@@ -251,6 +272,17 @@ const GanttChart: React.FC<GanttChartProps> = ({
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
+    
+    // Update visible segments right away
+    updateVisibleSegments(processSegments, newTime);
+    
+    // Pause playback when slider is manually changed
+    if (isPlaying) {
+      setIsPlaying(false);
+      if (onPause) {
+        onPause(newTime);
+      }
+    }
   };
   
   const handleSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,9 +297,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
       <div className="flex flex-wrap items-center mb-3 gap-2">
         <button 
           onClick={handlePlayPause}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className={`px-4 py-2 text-white rounded-md transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${isPlaying 
+            ? 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500' 
+            : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'}`}
         >
-          {isPlaying ? 'Pause' : 'Resume'}
+          {isPlaying ? 'Pause' : 'Play'}
         </button>
         <button 
           onClick={handleReset}
@@ -315,7 +349,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
       <div className="flex justify-center mb-4 p-3 bg-gray-50 rounded-md shadow-sm">
         {currentProcess ? (
           <div className="font-medium">
-            Current Process: <span className="font-bold text-indigo-700">P{currentProcess.process_id}</span>
+            Current Process: <span className="font-bold text-indigo-700">
+              {currentProcess.process_id === -1 
+                ? 'Idle (CPU waiting)' 
+                : `P${currentProcess.process_id}`}
+            </span>
           </div>
         ) : (
           <div className="font-medium text-center">
@@ -328,7 +366,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
       <div className="relative w-full overflow-x-auto pb-6 rounded-lg px-4" ref={chartContainerRef}>
         <div 
           className="relative h-36 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
-		  style={{
+          style={{
             // Add padding before first segment and after last segment (5% on each side)
             paddingLeft: '5%',
             paddingRight: '5%',
@@ -357,7 +395,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                   width: `${segmentWidth}%`,
                   left: `${segmentLeft}%`,
                 }}
-                title={`Process ${segment.processId}: ${segment.startTime} - ${segment.endTime}`}
+                title={`Process ${segment.processId === -1 ? 'Idle' : segment.processId}: ${segment.startTime} - ${segment.endTime}`}
               >
                 {/* Filled portion with translucent color */}
                 <div 
@@ -380,7 +418,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
               const timePoints = new Set<number>();
               
               // Add start and end times from all segments
-              visibleSegments.forEach(segment => {
+              processSegments.forEach(segment => {
                 timePoints.add(segment.startTime);
                 timePoints.add(segment.endTime);
               });
@@ -392,6 +430,14 @@ const GanttChart: React.FC<GanttChartProps> = ({
               const filteredTimes = sortedTimes.length > 20 
                 ? sortedTimes.filter((_, idx) => idx % Math.ceil(sortedTimes.length / 20) === 0)
                 : sortedTimes;
+              
+              // Always include start and end points
+              if (sortedTimes.length > 0 && !filteredTimes.includes(sortedTimes[0])) {
+                filteredTimes.unshift(sortedTimes[0]);
+              }
+              if (sortedTimes.length > 0 && !filteredTimes.includes(sortedTimes[sortedTimes.length - 1])) {
+                filteredTimes.push(sortedTimes[sortedTimes.length - 1]);
+              }
               
               // Render time markers for each unique time point
               return filteredTimes.map((time, index) => (
@@ -429,6 +475,24 @@ const GanttChart: React.FC<GanttChartProps> = ({
           </div>
         
         </div>
+      </div>
+      
+      {/* Legend for process colors */}
+      <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
+          <div className="w-4 h-4 bg-gray-200 border border-gray-400 rounded"></div>
+          <span className="text-xs text-gray-600">Idle</span>
+        </div>
+        {Array.from(new Set(ganttData.map(entry => entry.process_id)))
+          .filter(pid => pid !== -1)
+          .sort((a, b) => a - b)
+          .map(pid => (
+            <div key={`legend-${pid}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
+              <div className={`w-4 h-4 ${getProcessColor(pid)} border ${getBorderColor(pid)} rounded`}></div>
+              <span className="text-xs text-gray-600">P{pid}</span>
+            </div>
+          ))
+        }
       </div>
       
     </div>

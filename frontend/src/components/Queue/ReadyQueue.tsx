@@ -1,31 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { GanttChartEntry } from '../../services/parser';
 
 interface ReadyQueueProps {
   ganttData: GanttChartEntry[];
   currentTime: number;
+  isPaused?: boolean; 
 }
 
-const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
-  const [queuedProcesses, setQueuedProcesses] = useState<number[]>([]);
-  
-  // Update the ready queue whenever current time changes
-  useEffect(() => {
-    // Find the current gantt chart entry for this time point
-    const currentEntry = ganttData.find(
+const ReadyQueue: React.FC<ReadyQueueProps> = ({ 
+  ganttData, 
+  currentTime,
+  isPaused = true 
+}) => {
+  // Use memo to find the entry for the current time to avoid recalculation
+  const currentEntry = React.useMemo(() => {
+    return ganttData.find(
       entry => currentTime >= entry.start_time && currentTime < entry.end_time
-    );
-    
-    // Update the queue state with the current ready queue
+    ) || null;
+  }, [ganttData, currentTime]);
+
+  // Use memo to determine the queued processes based on current time
+  const queuedProcesses = React.useMemo(() => {
     if (currentEntry) {
-      setQueuedProcesses(currentEntry.ready_queue);
-    } else if (currentTime === 0 && ganttData.length > 0) {
-      // Show initial queue at time 0
-      setQueuedProcesses(ganttData[0].ready_queue);
-    } else if (currentTime >= Math.max(...ganttData.map(entry => entry.end_time))) {
-      // At or past the end of execution, clear the queue
-      setQueuedProcesses([]);
+      return currentEntry.ready_queue;
+    } 
+    
+    if (currentTime === 0 && ganttData.length > 0) {
+      return ganttData[0].ready_queue;
+    } 
+    
+    if (currentTime >= Math.max(...ganttData.map(entry => entry.end_time))) {
+      return [];
     }
-  }, [currentTime, ganttData]);
+    
+    // Find the closest previous entry when between segments
+    const previousEntries = ganttData
+      .filter(entry => entry.end_time <= currentTime)
+      .sort((a, b) => b.end_time - a.end_time);
+    
+    if (previousEntries.length > 0) {
+      return previousEntries[0].ready_queue;
+    }
+    
+    return [];
+  }, [ganttData, currentTime]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log(`ReadyQueue updated: time=${currentTime.toFixed(1)}, isPaused=${isPaused}, processes=${queuedProcesses.length}`);
+  }, [currentTime, isPaused, queuedProcesses]);
 
   // Generate color for each process box
   const getProcessColor = (processId: number): string => {
@@ -39,6 +62,12 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
       'bg-rose-500/70',
       'bg-lime-500/70',
       'bg-sky-500/70',
+      'bg-orange-500/70',
+      'bg-cyan-500/70',
+      'bg-fuchsia-500/70',
+      'bg-red-500/70',
+      'bg-blue-500/70',
+      'bg-green-500/70',
     ];
     
     return colors[processId % colors.length];
@@ -56,9 +85,20 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
       'border-rose-600',
       'border-lime-600',
       'border-sky-600',
+      'border-orange-600',
+      'border-cyan-600',
+      'border-fuchsia-600',
+      'border-red-600',
+      'border-blue-600',
+      'border-green-600',
     ];
     
     return colors[processId % colors.length];
+  };
+
+  // Determine if a process is currently executing
+  const isProcessExecuting = (pid: number): boolean => {
+    return currentEntry?.process_id === pid;
   };
 
   return (
@@ -68,9 +108,22 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
       </h2>
       
       <div className="flex flex-col">
-        <div className="mb-3">
+        <div className="mb-3 flex justify-between items-center">
           <div className="text-sm font-medium text-gray-500">
             Current Ready Queue (Time: {currentTime.toFixed(1)})
+          </div>
+          <div className="text-sm text-gray-600">
+            {currentEntry?.process_id !== undefined && currentEntry.process_id >= 0 ? (
+              <span>
+                Executing: <span className="font-bold text-indigo-700">P{currentEntry.process_id}</span>
+              </span>
+            ) : currentEntry?.process_id === -1 ? (
+              <span className="font-medium text-amber-600">CPU Idle</span>
+            ) : (
+              <span className="font-medium text-gray-500">
+                {currentTime === 0 ? 'Ready to Start' : 'Execution Complete'}
+              </span>
+            )}
           </div>
         </div>
         
@@ -89,7 +142,10 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
                 {queuedProcesses.map((pid, index) => (
                   <div 
                     key={`queue-${pid}-${index}`}
-                    className={`flex-shrink-0 w-16 h-16 flex items-center justify-center rounded-md ${getProcessColor(pid)} border-2 ${getBorderColor(pid)} shadow-sm transition-all duration-300 hover:shadow-md`}
+                    className={`flex-shrink-0 w-16 h-16 flex items-center justify-center rounded-md ${getProcessColor(pid)} border-2 ${getBorderColor(pid)} 
+                    ${isProcessExecuting(pid) ? 'ring-2 ring-offset-2 ring-indigo-500' : ''} 
+                    shadow-sm transition-all duration-300 hover:shadow-md`}
+                    title={isProcessExecuting(pid) ? `Process ${pid} - Currently Executing` : `Process ${pid} - Waiting`}
                   >
                     <span className="text-lg font-bold text-gray-800">P{pid}</span>
                   </div>
@@ -115,6 +171,20 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({ ganttData, currentTime }) => {
               : `${queuedProcesses.length} process${queuedProcesses.length !== 1 ? 'es' : ''} in queue`
             }
           </div>
+        </div>
+        
+        {/* Status indicator */}
+        <div className="mt-4 text-center">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPaused ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+            <span className={`w-2 h-2 mr-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-green-400'}`}></span>
+            {isPaused ? 'Paused' : 'Playing'}
+          </span>
+        </div>
+        
+        {/* Additional helpful information */}
+        <div className="mt-4 bg-gray-50 p-3 rounded-lg text-xs text-gray-600">
+          <p className="mb-1"><span className="font-medium">Ready Queue:</span> Processes waiting to be executed by the CPU.</p>
+          <p><span className="font-medium">Note:</span> The currently executing process may also appear in the ready queue depending on the scheduling algorithm.</p>
         </div>
       </div>
     </div>
