@@ -1,30 +1,30 @@
 {
-    "scheduling_type": "RoundRobin",
+    "scheduling_type": "SJF",
     "time_slice": 4,
     "processes": [
       {
         "p_id": 1,
         "arrival_time": 0,
-        "burst_time": 10,
-        "priority": 2
+        "burst_time": 2,
+        "priority": 0
       },
       {
         "p_id": 2,
-        "arrival_time": 2,
+        "arrival_time": 4,
         "burst_time": 5,
-        "priority": 1
+        "priority": 0
       },
       {
         "p_id": 3,
         "arrival_time": 4,
-        "burst_time": 8,
-        "priority": 3
+        "burst_time": 3,
+        "priority": 0
       },
       {
         "p_id": 4,
         "arrival_time": 6,
         "burst_time": 6,
-        "priority": 2
+        "priority": 0
       }
     ]
   }
