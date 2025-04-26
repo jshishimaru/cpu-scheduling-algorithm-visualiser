@@ -7,6 +7,7 @@ interface GanttChartProps {
   initialTime?: number; // Time to resume from when chart loads
   onPause?: (currentTime: number) => void; // Callback when chart is paused
   onResume?: () => void; // Callback when chart is resumed
+  onTimeUpdate?: (currentTime: number) => void; // New callback for continuous time updates
 }
 
 // Function to generate a color based on process ID - modern color palette with transparency
@@ -70,7 +71,8 @@ const GanttChart: React.FC<GanttChartProps> = ({
   speed = 300, 
   initialTime = 0,
   onPause,
-  onResume
+  onResume,
+  onTimeUpdate
 }) => {
   const [currentTime, setCurrentTime] = useState<number>(initialTime);
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // Start paused by default
@@ -209,6 +211,12 @@ const GanttChart: React.FC<GanttChartProps> = ({
         
         setCurrentTime(prev => {
           const newTime = Math.min(prev + increment, totalExecutionTime);
+          
+          // Notify parent about time update during animation
+          if (onTimeUpdate) {
+            onTimeUpdate(newTime);
+          }
+          
           return newTime;
         });
         
@@ -226,7 +234,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, currentTime, totalExecutionTime, animationSpeed, onPause]);
+  }, [isPlaying, currentTime, totalExecutionTime, animationSpeed, onPause, onTimeUpdate]);
   
   // Effect to notify parent component when chart is paused
   useEffect(() => {
@@ -267,6 +275,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
     if (onPause) {
       onPause(0);
     }
+    
+    // Also notify about time update on reset
+    if (onTimeUpdate) {
+      onTimeUpdate(0);
+    }
   };
   
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,6 +288,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
     
     // Update visible segments right away
     updateVisibleSegments(processSegments, newTime);
+    
+    // Notify parent about time update
+    if (onTimeUpdate) {
+      onTimeUpdate(newTime);
+    }
     
     // Pause playback when slider is manually changed
     if (isPlaying) {

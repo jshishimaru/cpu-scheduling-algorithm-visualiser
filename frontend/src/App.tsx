@@ -87,7 +87,7 @@ function App() {
   ];
   
   // Get algorithm name from parser
-  const algorithmName = parser?.getGanttChart().length > 0 
+  const algorithmName = parser?.getGanttChart() && parser.getGanttChart().length > 0 
     ? dummySchedulerData.scheduling_algorithm 
     : 'CPU Scheduling Algorithm';
   

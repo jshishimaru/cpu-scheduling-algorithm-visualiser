@@ -41,6 +41,11 @@ const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
   const handleResume = () => {
     setIsPaused(false);
   };
+  
+  // Handler for time updates during animation (new function)
+  const handleTimeUpdate = (time: number) => {
+    setCurrentTime(time);
+  };
 
   // If chartData is missing, show a fallback UI
   if (!chartData || chartData.length === 0) {
@@ -90,6 +95,7 @@ const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
           initialTime={currentTime}
           onPause={handlePause}
           onResume={handleResume}
+          onTimeUpdate={handleTimeUpdate}
         />
         
         {/* Ready Queue */}
