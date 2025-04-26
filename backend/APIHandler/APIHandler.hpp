@@ -12,6 +12,7 @@
 #include "../algorithms/MLFQ.hpp"
 #include "crow/middlewares/cors.h"
 #include "../algorithms/MLQ_Aging.hpp"
+#include "../algorithms/SJF_Aging.hpp"
 #include <vector>
 #include <string>
 
@@ -67,7 +68,12 @@ public:
         ([](const crow::request& req) {
             return APIHandler::handleMLQAgingSchedule(req);
         });
-    
+
+        CROW_ROUTE(app, "/api/sjf-aging")
+        .methods("POST"_method)
+        ([](const crow::request& req) {
+            return APIHandler::handleSJF_AgingSchedule(req);
+        });
 	}
     
     // Start the server
@@ -340,6 +346,50 @@ public:
             json error_json = {
                 {"status", "error"},
                 {"message", std::string("Error processing MLQ request: ") + e.what()}
+            };
+            return crow::response(500, error_json.dump());
+        }
+    }
+
+    static crow::response handleSJF_AgingSchedule(const crow::request& req) {
+        try {
+            auto input_json = json::parse(req.body);
+            
+            // Validate input
+            if (!input_json.contains("processes")) {
+                return crow::response(400, "{\"status\": \"error\", \"message\": \"Missing processes field\"}");
+            }
+            
+            // Parse processes
+            vector<Process> processes;
+            for (const auto& p : input_json["processes"]) {
+                Process process;
+                process.p_id = p["p_id"];
+                process.arrival_time = p["arrival_time"];
+                process.burst_time = p["burst_time"];
+                
+                // Priority is important for MLQ
+                if (p.contains("priority")) {
+                    process.priority = p["priority"];
+                } else {
+                    process.priority = 0;
+                }
+                
+                processes.push_back(process);
+            }
+            
+            // Get SJF specific parameters
+            int aging_threshold = input_json.value("aging_threshold", 50);  // Default to 50 if not provided
+            
+            // Run SJF algorithm
+            SJF_Aging sjf_aging;
+            json result = sjf_aging.schedule(processes);
+            
+            return crow::response(200, result.dump());
+        } catch (const std::exception& e) {
+            json error_json = {
+                {"status", "error"},
+                {"message", std::string("Error processing SJF request: ") + e.what()}
             };
             return crow::response(500, error_json.dump());
         }
