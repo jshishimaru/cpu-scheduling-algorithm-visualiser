@@ -41,7 +41,11 @@ public:
         ([](const crow::request& req) {
             return APIHandler::handleSchedule(req);
         });
-    }
+
+		CROW_ROUTE(app, "/api/mlq")
+		.methods("POST"_method)(APIHandler::handleMLQSchedule);
+    
+	}
     
     // Start the server
     void run(int port = 18080, bool multithreaded = true) {
@@ -114,8 +118,10 @@ public:
                 // Priority priority;
                 // result = priority.schedule(processes);
             } else if (algorithm == "MLQ") {
-                // MLQ mlq;
-                // result = mlq.schedule(processes);
+				int num_queues = input_json.value("num_queues", 3);  // Default to 3 queues if not provided
+				int base_quantum = input_json.value("quantum", 2);   // Default base quantum to 2 if not provided
+				MLQ mlq;
+				result = mlq.schedule(processes, num_queues, base_quantum);
             } else {
                 json error_json = {
                     {"status", "error"},
@@ -137,4 +143,49 @@ public:
             return crow::response(500, error_json.dump());
         }
     }
+
+	static crow::response handleMLQSchedule(const crow::request& req) {
+		try {
+			auto input_json = json::parse(req.body);
+			
+			// Validate input
+			if (!input_json.contains("processes")) {
+				return crow::response(400, "{\"status\": \"error\", \"message\": \"Missing processes field\"}");
+			}
+			
+			// Parse processes
+			vector<Process> processes;
+			for (const auto& p : input_json["processes"]) {
+				Process process;
+				process.p_id = p["process_id"];
+				process.arrival_time = p["arrival_time"];
+				process.burst_time = p["burst_time"];
+				
+				// Priority is important for MLQ
+				if (p.contains("priority")) {
+					process.priority = p["priority"];
+				} else {
+					process.priority = 0;
+				}
+				
+				processes.push_back(process);
+			}
+			
+			// Get MLQ specific parameters
+			int num_queues = input_json.value("num_queues", 3);  // Default to 3 queues if not provided
+			int base_quantum = input_json.value("quantum", 2);   // Default base quantum to 2 if not provided
+			
+			// Run MLQ algorithm
+			MLQ mlq;
+			json result = mlq.schedule(processes, num_queues, base_quantum);
+			
+			return crow::response(200, result.dump());
+		} catch (const std::exception& e) {
+			json error_json = {
+				{"status", "error"},
+				{"message", std::string("Error processing MLQ request: ") + e.what()}
+			};
+			return crow::response(500, error_json.dump());
+		}
+	}
 };
