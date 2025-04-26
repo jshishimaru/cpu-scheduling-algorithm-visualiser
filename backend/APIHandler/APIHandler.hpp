@@ -10,11 +10,8 @@
 #include "../algorithms/Priority.hpp"
 #include "../algorithms/MLQ.hpp"
 #include "../algorithms/MLFQ.hpp"
-<<<<<<< HEAD
 #include "crow/middlewares/cors.h"
-=======
 #include "../algorithms/MLQ_Aging.hpp"
->>>>>>> 24414f6 (add MLQ with aging)
 #include <vector>
 #include <string>
 
