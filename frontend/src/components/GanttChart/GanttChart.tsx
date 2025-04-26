@@ -7,7 +7,8 @@ interface GanttChartProps {
   initialTime?: number; // Time to resume from when chart loads
   onPause?: (currentTime: number) => void; // Callback when chart is paused
   onResume?: () => void; // Callback when chart is resumed
-  onTimeUpdate?: (currentTime: number) => void; // New callback for continuous time updates
+  onTimeUpdate?: (currentTime: number) => void; // Callback for continuous time updates
+  onReset?: () => void; // Add reset handler prop
 }
 
 // Function to generate a color based on process ID - modern color palette with transparency
@@ -72,7 +73,8 @@ const GanttChart: React.FC<GanttChartProps> = ({
   initialTime = 0,
   onPause,
   onResume,
-  onTimeUpdate
+  onTimeUpdate,
+  onReset
 }) => {
   const [currentTime, setCurrentTime] = useState<number>(initialTime);
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // Start paused by default
@@ -279,6 +281,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
     // Also notify about time update on reset
     if (onTimeUpdate) {
       onTimeUpdate(0);
+    }
+    
+    // Call parent reset handler if provided
+    if (onReset) {
+      onReset();
     }
   };
   

@@ -1,78 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import { Parser } from './services/parser';
-import { dummySchedulerData, largeDataset } from './data/dummyData';
-import VisualizationContainer from './components/VisualizationContainer/VisualizationContainer';
-import NewProcessForm, { NewProcessData } from './components/NewProcessForm/NewProcessForm';
-import NewProcessTable from './components/NewProcessTable/NewProcessTable';
-import PauseNotification from './components/PauseNotification/PauseNotification';
-import RescheduleButton from './components/RescheduleButton/RescheduleButton';
-import ReadyQueue from './components/Queue/ReadyQueue';
-// import InputForm from './components/InputForm/InputForm';
-// import { Parser } from './services/parser';
-// import { dummySchedulerData, largeDataset } from './data/dummyData';
+import { dummySchedulerData } from './data/dummyData';
+import ProcessManager from './components/ProcessManager/ProcessManager';
+import { NewProcessData } from './components/NewProcessForm/NewProcessForm';
 import GraphsContainer from './components/Graphs/GraphsContainer';
+import apiService from './services/apiservice';
 
 function App() {
   const [parser, setParser] = useState<Parser | null>(null);
   const [selectedChart, setSelectedChart] = useState<string>('turnaround'); // Default chart type
-  const [parsedData, setParsedData] = useState<any>(null);
-  const [isPaused, setIsPaused] = useState<boolean>(true); // Set paused to true by default
-  const [pausedTime, setPausedTime] = useState<number>(0);
-  const [needsReschedule, setNeedsReschedule] = useState<boolean>(false);
-  const [newProcesses, setNewProcesses] = useState<NewProcessData[]>([]);
+  const [schedulerData, setSchedulerData] = useState<any>(dummySchedulerData);
+  const [resetKey, setResetKey] = useState<number>(0); // Add a key for resetting components
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Effect to load initial data
   useEffect(() => {
-    fetchAndParseData();
+    // Use dummy data for initial render
+    const initialParser = new Parser();
+    if (initialParser.parse(dummySchedulerData)) {
+      setParser(initialParser);
+    }
   }, []);
   
-  // Effect to handle rescheduling
-  useEffect(() => {
-    if (needsReschedule) {
-      fetchAndParseData();
-      setNeedsReschedule(false);
-      // Resume the chart after rescheduling
-      setIsPaused(false);
+  const fetchAndParseData = async (newProcesses?: NewProcessData[], algorithm?: string, timeQuantum?: number, numOfQueues?: number) => {
+    if (!newProcesses || newProcesses.length === 0) {
+      console.warn("No processes provided for rescheduling");
+      return;
     }
-  }, [needsReschedule]);
-  
-  const fetchAndParseData = () => {
-    // In a real app, you would fetch data from the backend
-    // For now, use the dummy data to test the component
-    console.log("New processes to send to backend:", newProcesses);
+
+    setLoading(true);
+    setError(null);
     
-    const parser = new Parser();
-    const success = parser.parse(dummySchedulerData);
-    
-    if (success) {
-      setParsedData({
-        ganttChart: parser.getGanttChart(),
-        processStats: parser.getProcessStats(),
-      });
-      setParser(parser);
+    try {
+      // Prepare the data for the API
+      const schedulerInput = apiService.prepareSchedulerInput(
+        newProcesses,
+        algorithm || 'FCFS',
+        timeQuantum,
+        numOfQueues
+      );
       
-      // Clear the new processes list after rescheduling
-      setNewProcesses([]);
-    } else {
-      console.error("Failed to parse scheduler data");
+      let result = null;
+      
+      // Choose the appropriate API method based on algorithm type
+      if (algorithm === 'MLQ') {
+        result = await apiService.scheduleMLQ(schedulerInput);
+      } else if (algorithm === 'MLFQ') {
+        result = await apiService.scheduleMLFQ(schedulerInput);
+      } else {
+        result = await apiService.scheduleProcesses(schedulerInput);
+      }
+      
+      if (result) {
+        // Update the scheduler data with the response
+        setSchedulerData(result);
+        
+        // Create a new parser to parse the result
+        const newParser = new Parser();
+        if (newParser.parse(result)) {
+          setParser(newParser);
+        }
+      } else {
+        setError("Failed to retrieve scheduling data from the server");
+      }
+    } catch (err) {
+      console.error("Error during scheduling:", err);
+      setError("An error occurred while communicating with the scheduler server");
+    } finally {
+      setLoading(false);
     }
   };
   
-  const handleChartPause = (currentTime: number) => {
-    setPausedTime(currentTime);
-    setIsPaused(true);
+  const handleReschedule = (newProcesses: NewProcessData[], algorithm?: string, params?: any) => {
+    console.log("Rescheduling with:", { newProcesses, algorithm, params });
+    fetchAndParseData(
+      newProcesses, 
+      algorithm, 
+      params?.timeQuantum, 
+      params?.numberOfQueues
+    );
   };
   
-  const handleChartResume = () => {
-    setIsPaused(false);
-  };
-  
-  const handleAddProcess = (newProcess: NewProcessData) => {
-    setNewProcesses(prev => [...prev, newProcess]);
-  };
-  
-  const handleReschedule = () => {
-    setNeedsReschedule(true);
+  // Add a reset function that forces component re-rendering
+  const handleReset = () => {
+    // Increment key to force ProcessManager to remount
+    setResetKey(prev => prev + 1);
+    // Reset to initial data
+    const initialParser = new Parser();
+    if (initialParser.parse(dummySchedulerData)) {
+      setSchedulerData(dummySchedulerData);
+      setParser(initialParser);
+    }
   };
   
   const chartOptions = [
@@ -86,51 +105,41 @@ function App() {
     { value: 'radar', label: 'Normalized Performance' }
   ];
   
-  // Get algorithm name from parser
-  const algorithmName = parser?.getGanttChart() && parser.getGanttChart().length > 0 
-    ? dummySchedulerData.scheduling_algorithm 
-    : 'CPU Scheduling Algorithm';
+  // Get algorithm name from scheduler data
+  const algorithmName = schedulerData?.scheduling_algorithm || 'CPU Scheduling Algorithm';
   
   return (
     <div className="App">
       <header className="bg-gray-800 text-white p-4 mb-6">
         <h1 className="text-3xl font-bold">CPU Scheduler Simulator</h1>
-        {/* {algorithmName && (
-          <p className="text-lg mt-2">Algorithm: <span className="font-semibold">{algorithmName}</span></p>
-        )} */}
       </header>
       
       <main className="container mx-auto px-4">
-        {/* Simulation paused notification */}
-        {isPaused && <PauseNotification pausedTime={pausedTime} />}
-        
-        {/* New Process Form - only visible when paused */}
-        {isPaused && (
-          <NewProcessForm 
-            currentTime={pausedTime} 
-            onAddProcess={handleAddProcess} 
-            isVisible={true} 
-          />
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
         )}
         
-        {/* Reschedule button - only visible when paused with new processes */}
-        {isPaused && newProcesses.length > 0 && (
-          <RescheduleButton onClick={handleReschedule} />
+        {loading && (
+          <div className="flex justify-center items-center p-8 mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+            <span className="ml-3 text-lg text-indigo-600">Processing...</span>
+          </div>
         )}
-
-        {/* New processes table */}
-        <NewProcessTable processes={newProcesses} />
         
-        {/* Visualization Container */}
-        {parsedData && (
-          <VisualizationContainer
-            schedulerData={dummySchedulerData}
-            // ganttData={parsedData.ganttChart}
-          />
-        )}
+        {/* Process Manager - handles form, table and visualization */}
+        <ProcessManager 
+          key={resetKey} // Add key to force remount on reset
+          schedulerData={schedulerData}
+          onReschedule={handleReschedule}
+          onReset={handleReset} // Pass down reset handler
+          loading={loading}
+        />
         
         {/* Graphs container for analytics */}
-        {parser && (
+        {parser && !loading && (
           <div className="mt-10">
             <h2 className="text-2xl font-bold mb-4">Performance Analytics</h2>
             
@@ -157,12 +166,6 @@ function App() {
               algorithmName={algorithmName}
               selectedChart={selectedChart}
             />
-          </div>
-        )}
-        
-        {!parsedData && (
-          <div className="my-10 text-center p-8 bg-gray-50 rounded-lg shadow-md">
-            <p className="text-lg text-gray-600">Loading scheduling data...</p>
           </div>
         )}
       </main>

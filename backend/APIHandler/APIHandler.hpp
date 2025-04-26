@@ -10,6 +10,7 @@
 #include "../algorithms/Priority.hpp"
 #include "../algorithms/MLQ.hpp"
 #include "../algorithms/MLFQ.hpp"
+#include "crow/middlewares/cors.h"
 #include <vector>
 #include <string>
 
@@ -17,12 +18,20 @@ using json = nlohmann::json;
 
 class APIHandler {
 private:
-    crow::SimpleApp app;
+	crow::App<crow::CORSHandler> app;
 
 public:
     APIHandler() {
-        setupRoutes();
-    }
+		auto& cors = app.get_middleware<crow::CORSHandler>();
+        cors
+            .global()
+                .origin("*")
+                .methods("POST"_method, "GET"_method, "OPTIONS"_method)
+                .headers("Content-Type", "Authorization")
+                .allow_credentials();
+                
+        setupRoutes();    
+	}
     
     // Initialize and set up all routes
     void setupRoutes() {
@@ -99,7 +108,28 @@ public:
             std::vector<Process> processes;
             for (const auto& process : input_json["processes"]) {
                 Process p;
-                p.p_id = process["p_id"];
+                // Ensure p_id is handled as an integer
+                if (process["p_id"].is_number()) {
+                    p.p_id = process["p_id"].get<int>();
+                } else if (process["p_id"].is_string()) {
+                    // Handle string conversion to integer if necessary
+                    try {
+                        p.p_id = std::stoi(process["p_id"].get<std::string>());
+                    } catch (const std::exception& e) {
+                        json error_json = {
+                            {"status", "error"},
+                            {"message", "Invalid process ID format: must be convertible to integer"}
+                        };
+                        return crow::response(400, error_json.dump());
+                    }
+                } else {
+                    json error_json = {
+                        {"status", "error"},
+                        {"message", "Process ID must be a number or string convertible to number"}
+                    };
+                    return crow::response(400, error_json.dump());
+                }
+                
                 p.arrival_time = process["arrival_time"];
                 p.burst_time = process["burst_time"];
                 p.priority = process.value("priority", 0);  // Default priority to 0 if not provided
@@ -164,7 +194,29 @@ public:
 			vector<Process> processes;
 			for (const auto& p : input_json["processes"]) {
 				Process process;
-				process.p_id = p["process_id"];
+                
+                // Ensure p_id is handled as an integer
+                if (p["p_id"].is_number()) {
+                    process.p_id = p["p_id"].get<int>();
+                } else if (p["p_id"].is_string()) {
+                    // Handle string conversion to integer if necessary
+                    try {
+                        process.p_id = std::stoi(p["p_id"].get<std::string>());
+                    } catch (const std::exception& e) {
+                        json error_json = {
+                            {"status", "error"},
+                            {"message", "Invalid process ID format in MLQ request: must be convertible to integer"}
+                        };
+                        return crow::response(400, error_json.dump());
+                    }
+                } else {
+                    json error_json = {
+                        {"status", "error"},
+                        {"message", "Process ID in MLQ request must be a number or string convertible to number"}
+                    };
+                    return crow::response(400, error_json.dump());
+                }
+				
 				process.arrival_time = p["arrival_time"];
 				process.burst_time = p["burst_time"];
 				
@@ -179,7 +231,7 @@ public:
 			}
 			
 			// Get MLQ specific parameters
-			int num_queues = input_json.value("num_queues", 3);  // Default to 3 queues if not provided
+			int num_queues = input_json.value("num_of_queues", 3);  // Default to 3 queues if not provided
 			int base_quantum = input_json.value("quantum", 2);   // Default base quantum to 2 if not provided
 			
 			// Run MLQ algorithm

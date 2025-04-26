@@ -1,70 +1,7 @@
 import { SchedulerData } from '../services/parser';
 
 export const dummySchedulerData: SchedulerData = {
-  "gantt_chart": [
-    {
-      "process_id": 1,
-      "start_time": 0,
-      "end_time": 4,
-      "ready_queue": [1]
-    },
-	{
-		"process_id": -1,
-		"start_time": 4,
-		"end_time": 6,
-		"ready_queue": []
-	},
-    {
-      "process_id": 2,
-      "start_time": 6,
-      "end_time": 8,
-      "ready_queue": [1, 2]
-    },
-    {
-      "process_id": 1,
-      "start_time": 8,
-      "end_time": 10,
-      "ready_queue": [3, 1]
-    },
-    {
-      "process_id": 3,
-      "start_time": 10,
-      "end_time": 14,
-      "ready_queue": [1, 3]
-    },
-    {
-      "process_id": 1,
-      "start_time": 14,
-      "end_time": 16,
-      "ready_queue": [1]
-    }
-  ],
-  "process_stats": [
-    {
-      "process_id": 1,
-      "arrival_time": 0,
-      "burst_time": 10,
-      "completion_time": 16,
-      "turnaround_time": 16,
-      "waiting_time": 6
-    },
-    {
-      "process_id": 2,
-      "arrival_time": 2,
-      "burst_time": 4,
-      "completion_time": 8,
-      "turnaround_time": 6,
-      "waiting_time": 2
-    },
-    {
-      "process_id": 3,
-      "arrival_time": 4,
-      "burst_time": 4,
-      "completion_time": 14,
-      "turnaround_time": 10,
-      "waiting_time": 6
-    }
-  ],
+  "gantt_chart":[{"end_time":1,"process_id":1,"ready_queue":[],"start_time":0},{"end_time":2,"process_id":1,"ready_queue":[2],"start_time":1},{"end_time":3,"process_id":2,"ready_queue":[3,1],"start_time":2},{"end_time":4,"process_id":2,"ready_queue":[3,1,4],"start_time":3},{"end_time":6,"process_id":3,"ready_queue":[1,4,2],"start_time":4},{"end_time":8,"process_id":1,"ready_queue":[4,2,3],"start_time":6},{"end_time":10,"process_id":4,"ready_queue":[2,3,1],"start_time":8},{"end_time":11,"process_id":2,"ready_queue":[3,1],"start_time":10},{"end_time":13,"process_id":3,"ready_queue":[1],"start_time":11},{"end_time":14,"process_id":1,"ready_queue":[],"start_time":13}],"process_stats":[{"arrival_time":0,"burst_time":5,"completion_time":14,"process_id":1,"turnaround_time":14,"waiting_time":9},{"arrival_time":1,"burst_time":3,"completion_time":11,"process_id":2,"turnaround_time":10,"waiting_time":7},{"arrival_time":2,"burst_time":4,"completion_time":13,"process_id":3,"turnaround_time":11,"waiting_time":7},{"arrival_time":3,"burst_time":2,"completion_time":10,"process_id":4,"turnaround_time":7,"waiting_time":5}],
   "scheduling_algorithm": "Round Robin"
 };
 

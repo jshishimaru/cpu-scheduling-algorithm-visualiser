@@ -4,6 +4,7 @@ interface NewProcessFormProps {
   currentTime: number;
   onAddProcess: (newProcess: NewProcessData) => void;
   isVisible: boolean;
+  nextProcessId: number;
 }
 
 export interface NewProcessData {
@@ -13,12 +14,22 @@ export interface NewProcessData {
   priority?: number;
 }
 
-const NewProcessForm: React.FC<NewProcessFormProps> = ({ currentTime, onAddProcess, isVisible }) => {
-  const [processId, setProcessId] = useState<number>(0);
+const NewProcessForm: React.FC<NewProcessFormProps> = ({ 
+  currentTime, 
+  onAddProcess, 
+  isVisible, 
+  nextProcessId 
+}) => {
+  const [processId, setProcessId] = useState<number>(nextProcessId);
   const [arrivalTime, setArrivalTime] = useState<number>(Math.ceil(currentTime));
   const [burstTime, setBurstTime] = useState<number>(1);
   const [priority, setPriority] = useState<number>(1);
   const [error, setError] = useState<string>('');
+  
+  // Update process ID when nextProcessId changes
+  useEffect(() => {
+    setProcessId(nextProcessId);
+  }, [nextProcessId]);
   
   // Update arrival time when currentTime changes
   useEffect(() => {
@@ -52,8 +63,7 @@ const NewProcessForm: React.FC<NewProcessFormProps> = ({ currentTime, onAddProce
       priority
     });
     
-    // Reset form
-    setProcessId(prev => prev + 1);
+    // Reset form fields except for the process ID (which will be updated via the prop)
     setArrivalTime(Math.ceil(currentTime));
     setBurstTime(1);
     setPriority(1);

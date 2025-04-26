@@ -21,13 +21,27 @@ export interface SchedulerData {
   scheduling_algorithm: string;
 }
 
+export interface MLQGanttChartEntry {
+  process_id: number;
+  start_time: number;
+  end_time: number;
+  queues: number[][];
+  queue_level: number;
+}
+
+export interface MLQSchedulerData {
+  gantt_chart: MLQGanttChartEntry[];
+  process_stats: ProcessStats[];
+  scheduling_algorithm: string;
+}
+
 // Interface for input data to be saved
 export interface SchedulerInput {
   scheduling_type: string;
-  time_slice?: number;
+  quantum?: number;
   num_of_queues?: number;
   processes: {
-    p_id: string;
+    p_id: number; // Changed from string to number to match backend expectation
     arrival_time: number;
     burst_time: number;
     priority: number;
@@ -36,6 +50,8 @@ export interface SchedulerInput {
 
 export class Parser {
   private data: SchedulerData | null = null;
+  private mlqData: MLQSchedulerData | null = null;
+  private isMLQType: boolean = false;
   
   /**
    * Parse the JSON data from backend
@@ -44,14 +60,50 @@ export class Parser {
    */
   parse(jsonData: string | object): boolean {
     try {
-      if (typeof jsonData === 'string') {
-        this.data = JSON.parse(jsonData);
+      // Reset state on each parse
+      this.data = null;
+      this.mlqData = null;
+      this.isMLQType = false;
+      
+      // Parse the data based on its type
+      const parsedData = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      
+      // Check if it's MLQ/MLFQ format by examining the first gantt chart entry
+      if (parsedData.gantt_chart && 
+          parsedData.gantt_chart.length > 0 && 
+          'queues' in parsedData.gantt_chart[0]) {
+        this.isMLQType = true;
+        this.mlqData = parsedData as MLQSchedulerData;
       } else {
-        this.data = jsonData as SchedulerData;
+        this.data = parsedData as SchedulerData;
       }
+      
       return this.validate();
     } catch (error) {
       console.error('Failed to parse scheduler data:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Parse specifically MLQ/MLFQ format data
+   * @param jsonData - JSON string or object from backend in MLQ format
+   * @returns true if parsing was successful, false otherwise
+   */
+  parseMLQ(jsonData: string | object): boolean {
+    try {
+      this.data = null;
+      this.isMLQType = true;
+      
+      if (typeof jsonData === 'string') {
+        this.mlqData = JSON.parse(jsonData) as MLQSchedulerData;
+      } else {
+        this.mlqData = jsonData as MLQSchedulerData;
+      }
+      
+      return this.validateMLQ();
+    } catch (error) {
+      console.error('Failed to parse MLQ scheduler data:', error);
       return false;
     }
   }
@@ -61,10 +113,33 @@ export class Parser {
    * @returns true if data is valid, false otherwise
    */
   private validate(): boolean {
+    if (this.isMLQType) {
+      return this.validateMLQ();
+    }
+    
     if (!this.data) return false;
     if (!Array.isArray(this.data.gantt_chart) || !Array.isArray(this.data.process_stats)) {
       return false;
     }
+    return true;
+  }
+  
+  /**
+   * Validate MLQ/MLFQ data structure
+   * @returns true if MLQ data is valid, false otherwise
+   */
+  private validateMLQ(): boolean {
+    if (!this.mlqData) return false;
+    if (!Array.isArray(this.mlqData.gantt_chart) || !Array.isArray(this.mlqData.process_stats)) {
+      return false;
+    }
+    
+    // Verify the first entry has the expected MLQ properties
+    if (this.mlqData.gantt_chart.length > 0) {
+      const firstEntry = this.mlqData.gantt_chart[0];
+      return 'queues' in firstEntry && 'queue_level' in firstEntry;
+    }
+    
     return true;
   }
 
@@ -73,7 +148,26 @@ export class Parser {
    * @returns Array of GanttChartEntry or empty array if data is not available
    */
   getGanttChart(): GanttChartEntry[] {
+    if (this.isMLQType && this.mlqData) {
+      // Convert MLQ gantt entries to standard format for visualization
+      return this.mlqData.gantt_chart.map(entry => ({
+        process_id: entry.process_id,
+        start_time: entry.start_time,
+        end_time: entry.end_time,
+        // Use the active queue for this level as the ready queue
+        ready_queue: entry.queues[entry.queue_level] || []
+      }));
+    }
+    
     return this.data?.gantt_chart || [];
+  }
+
+  /**
+   * Get the parsed MLQ/MLFQ gantt chart data in its original format
+   * @returns Array of MLQGanttChartEntry or empty array if data is not available
+   */
+  getMLQGanttChart(): MLQGanttChartEntry[] {
+    return this.mlqData?.gantt_chart || [];
   }
 
   /**
@@ -81,7 +175,29 @@ export class Parser {
    * @returns Array of ProcessStats or empty array if data is not available
    */
   getProcessStats(): ProcessStats[] {
+    if (this.isMLQType) {
+      return this.mlqData?.process_stats || [];
+    }
     return this.data?.process_stats || [];
+  }
+  
+  /**
+   * Check if the parsed data is in MLQ/MLFQ format
+   * @returns boolean indicating if the data is in MLQ format
+   */
+  isMLQFormat(): boolean {
+    return this.isMLQType;
+  }
+  
+  /**
+   * Get the algorithm type
+   * @returns string with the algorithm name or empty string
+   */
+  getAlgorithm(): string {
+    if (this.isMLQType) {
+      return this.mlqData?.scheduling_algorithm || '';
+    }
+    return this.data?.scheduling_algorithm || '';
   }
 
   /**

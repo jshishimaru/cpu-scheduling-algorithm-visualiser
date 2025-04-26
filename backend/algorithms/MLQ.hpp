@@ -74,7 +74,8 @@ public:
                 {"process_id", -1},
                 {"start_time", 0},
                 {"end_time", sorted_processes[0].arrival_time},
-                {"queues", json::array()}
+                {"queues", json::array()},
+                {"queue_level", -1}  // Indicate no queue is running
             };
             gantt_chart.push_back(idle_slot);
             current_time = sorted_processes[0].arrival_time;
@@ -124,7 +125,8 @@ public:
                     {"process_id", -1},
                     {"start_time", current_time},
                     {"end_time", next_arrival_time},
-                    {"queues", json::array()}
+                    {"queues", json::array()},
+                    {"queue_level", -1}  // Indicate no queue is running
                 };
                 gantt_chart.push_back(idle_slot);
                 current_time = next_arrival_time;
@@ -156,7 +158,8 @@ public:
                 json new_segment = {
                     {"process_id", current_process_id},
                     {"start_time", current_time},
-                    {"queues", queues_snapshot}
+                    {"queues", queues_snapshot},
+                    {"queue_level", active_queue}  // Add the current queue level
                 };
                 gantt_chart.push_back(new_segment);
                 time_in_current_process = 0;

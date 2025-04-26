@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SchedulerInput, SchedulerData, Parser } from './parser';
+import { SchedulerInput, SchedulerData, Parser, MLQSchedulerData } from './parser';
 
 /**
  * Service for handling API requests to the scheduler backend
@@ -24,8 +24,10 @@ export class ApiService {
    */
   async scheduleProcesses(schedulerInput: SchedulerInput): Promise<SchedulerData | null> {
     try {
+      console.log('Sending request to backend:', schedulerInput);
+	
       const response = await axios.post(
-        `${this.baseUrl}/schedule`,
+        `${this.baseUrl}/api/schedule`,
         schedulerInput,
         {
           headers: {
@@ -33,6 +35,8 @@ export class ApiService {
           },
         }
       );
+
+      console.log('Received response from backend:', response.data);
 
       if (response.status === 200 && this.parser.parse(response.data)) {
         return {
@@ -49,7 +53,98 @@ export class ApiService {
       return null;
     }
   }
+  
+  /**
+   * Convert NewProcessData to the format expected by the backend API
+   * @param processes - Array of process data from the UI
+   * @param algorithmType - Selected scheduling algorithm
+   * @param timeQuantum - Optional time quantum for RR, MLQ, MLFQ
+   * @param numOfQueues - Optional number of queues for MLQ, MLFQ
+   * @returns Properly formatted SchedulerInput object
+   */
+  prepareSchedulerInput(
+    processes: any[],
+    algorithmType: string,
+    timeQuantum?: number,
+    numOfQueues?: number
+  ): SchedulerInput {
+    return {
+      scheduling_type: algorithmType,
+      quantum: timeQuantum,
+      num_of_queues: numOfQueues,
+      processes: processes.map(p => ({
+        p_id: parseInt(p.id.toString()), // Convert to number to ensure consistency with backend
+        arrival_time: p.arrivalTime,
+        burst_time: p.burstTime,
+        priority: p.priority || 0
+      }))
+    };
+  }
+  
+  /**
+   * Send process data to the backend for Multi-Level Queue scheduling
+   * @param schedulerInput - The input data containing processes and MLQ configuration
+   * @returns Promise with the parsed MLQ scheduler data
+   */
+  async scheduleMLQ(schedulerInput: SchedulerInput): Promise<MLQSchedulerData | null> {
+    return this.scheduleMultiLevelQueue(schedulerInput, '/api/mlq');
+  }
 
+  /**
+   * Send process data to the backend for Multi-Level Feedback Queue scheduling
+   * @param schedulerInput - The input data containing processes and MLFQ configuration
+   * @returns Promise with the parsed MLFQ scheduler data
+   */
+  async scheduleMLFQ(schedulerInput: SchedulerInput): Promise<MLQSchedulerData | null> {
+    return this.scheduleMultiLevelQueue(schedulerInput, '/api/mlfq');
+  }
+
+  /**
+   * Helper method to handle both MLQ and MLFQ scheduling requests
+   * @param schedulerInput - The input data containing processes and queue configuration
+   * @param endpoint - The specific API endpoint for MLQ or MLFQ
+   * @returns Promise with the parsed multi-level queue scheduler data
+   */
+  private async scheduleMultiLevelQueue(
+    schedulerInput: SchedulerInput, 
+    endpoint: string
+  ): Promise<MLQSchedulerData | null> {
+    try {
+      console.log(`Sending ${endpoint} request to backend:`, schedulerInput);
+      
+      const response = await axios.post(
+        `${this.baseUrl}${endpoint}`,
+        schedulerInput,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log(`Received response from ${endpoint}:`, response.data);
+
+      if (response.status === 200) {
+        // Use the specialized MLQ parser
+        if (this.parser.parseMLQ(response.data)) {
+          return {
+            gantt_chart: this.parser.getMLQGanttChart(),
+            process_stats: this.parser.getProcessStats(),
+            scheduling_algorithm: response.data.scheduling_algorithm || schedulerInput.scheduling_type
+          };
+        }
+        console.error('Failed to parse multi-level queue response data');
+        return null;
+      } else {
+        console.error('Multi-level queue scheduling request failed');
+        return null;
+      }
+    } catch (error) {
+      console.error(`Error sending process data to ${endpoint}:`, error);
+      return null;
+    }
+  }
+  
   /**
    * Change the base URL for API requests
    * @param newUrl - New base URL to use
