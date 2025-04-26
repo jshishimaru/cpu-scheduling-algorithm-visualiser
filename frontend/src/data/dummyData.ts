@@ -8,9 +8,15 @@ export const dummySchedulerData: SchedulerData = {
       "end_time": 4,
       "ready_queue": [1]
     },
+	{
+		"process_id": -1,
+		"start_time": 4,
+		"end_time": 6,
+		"ready_queue": []
+	},
     {
       "process_id": 2,
-      "start_time": 4,
+      "start_time": 6,
       "end_time": 8,
       "ready_queue": [1, 2]
     },
@@ -58,7 +64,8 @@ export const dummySchedulerData: SchedulerData = {
       "turnaround_time": 10,
       "waiting_time": 6
     }
-  ]
+  ],
+  "scheduling_algorithm": "Round Robin"
 };
 
 export const largeDataset: SchedulerData = {
@@ -87,7 +94,8 @@ export const largeDataset: SchedulerData = {
     { "process_id": 8, "arrival_time": 7, "burst_time": 4, "completion_time": 34, "turnaround_time": 27, "waiting_time": 23 },
     { "process_id": 9, "arrival_time": 8, "burst_time": 5, "completion_time": 39, "turnaround_time": 31, "waiting_time": 26 },
     { "process_id": 10, "arrival_time": 9, "burst_time": 5, "completion_time": 44, "turnaround_time": 35, "waiting_time": 30 }
-  ]
+  ],
+  "scheduling_algorithm": "Shortest Job First"
 };
 
 export const veryLargeDataset: SchedulerData = {
@@ -123,5 +131,6 @@ export const veryLargeDataset: SchedulerData = {
       "turnaround_time": turnaroundTime,
       "waiting_time": waitingTime
     };
-  })
+  }),
+  "scheduling_algorithm": "Multi-Level Feedback Queue"
 };

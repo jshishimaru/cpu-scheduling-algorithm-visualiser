@@ -4,20 +4,28 @@ import { GanttChartEntry } from '../../services/parser';
 interface GanttChartProps {
   ganttData: GanttChartEntry[];
   speed?: number; // Animation speed in milliseconds per time unit
+  initialTime?: number; // Time to resume from when chart loads
+  onPause?: (currentTime: number) => void; // Callback when chart is paused
+  onResume?: () => void; // Callback when chart is resumed
 }
 
 // Function to generate a color based on process ID - modern color palette with transparency
 const getProcessColor = (processId: number): string => {
+  // Special case for idle process (process ID -1)
+  if (processId === -1) {
+    return 'bg-white';
+  }
+  
   const colors = [
-    'bg-indigo-500/70',   // Indigo with transparency
-    'bg-pink-500/70',     // Pink with transparency
-    'bg-teal-500/70',     // Teal with transparency
-    'bg-amber-500/70',    // Amber with transparency
-    'bg-emerald-500/70',  // Emerald with transparency
-    'bg-violet-500/70',   // Violet with transparency
-    'bg-rose-500/70',     // Rose with transparency
-    'bg-lime-500/70',     // Lime with transparency
-    'bg-sky-500/70',      // Sky with transparency
+    'bg-indigo-500/40',   // Indigo 
+    'bg-pink-500/40',     // Pink 
+    'bg-teal-500/40',     // Teal 
+    'bg-amber-500/40',    // Amber 
+    'bg-emerald-500/40',  // Emerald 
+    'bg-violet-500/40',   // Violet 
+    'bg-rose-500/40',     // Rose 
+    'bg-lime-500/40',     // Lime 
+    'bg-sky-500/40',      // Sky 
   ];
   
   return colors[processId % colors.length];
@@ -25,6 +33,11 @@ const getProcessColor = (processId: number): string => {
 
 // Function to get border color to match the translucent fill
 const getBorderColor = (processId: number): string => {
+  // Special case for idle process (process ID -1)
+  if (processId === -1) {
+    return 'border-gray-300';
+  }
+  
   const colors = [
     'border-indigo-600',
     'border-pink-600',
@@ -40,9 +53,15 @@ const getBorderColor = (processId: number): string => {
   return colors[processId % colors.length];
 };
 
-const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+const GanttChart: React.FC<GanttChartProps> = ({ 
+  ganttData, 
+  speed = 300, 
+  initialTime = 0,
+  onPause,
+  onResume
+}) => {
+  const [currentTime, setCurrentTime] = useState<number>(initialTime);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false); // Start paused by default
   const [processSegments, setProcessSegments] = useState<any[]>([]);
   const [visibleSegments, setVisibleSegments] = useState<any[]>([]);
   const [animationSpeed, setAnimationSpeed] = useState<number>(speed);
@@ -54,6 +73,15 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
   const totalExecutionTime = ganttData.length > 0 
     ? Math.max(...ganttData.map(entry => entry.end_time))
     : 0;
+  
+  // Check if chart is complete
+  useEffect(() => {
+    // Notify parent when chart is completed (treat as paused)
+    if (currentTime >= totalExecutionTime && onPause) {
+      setIsPlaying(false);
+      onPause(totalExecutionTime);
+    }
+  }, [currentTime, totalExecutionTime, onPause]);
     
   // Process the gantt data to create segments (merging consecutive same process)
   useEffect(() => {
@@ -136,6 +164,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
+      
+      // Notify parent when chart completes (treat as paused)
+      if (currentTime >= totalExecutionTime && onPause) {
+        onPause(totalExecutionTime);
+      }
+      
       return;
     }
     
@@ -170,7 +204,21 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, currentTime, totalExecutionTime, animationSpeed]);
+  }, [isPlaying, currentTime, totalExecutionTime, animationSpeed, onPause]);
+  
+  // Effect to notify parent component when chart is paused
+  useEffect(() => {
+    if (!isPlaying && onPause && currentTime > 0) {
+      onPause(currentTime);
+    }
+  }, [isPlaying, currentTime, onPause]);
+  
+  // Notify parent about initial paused state on component mount
+  useEffect(() => {
+    if (!isPlaying && onPause) {
+      onPause(currentTime);
+    }
+  }, []);
   
   // Find current process
   const currentProcess = ganttData.find(
@@ -178,13 +226,26 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
   );
   
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    const newPlayingState = !isPlaying;
+    setIsPlaying(newPlayingState);
+    
+    if (newPlayingState && onResume) {
+      // Notify parent component when resuming
+      onResume();
+    } else if (!newPlayingState && onPause) {
+      // Notify parent component when pausing
+      onPause(currentTime);
+    }
   };
   
   const handleReset = () => {
     setCurrentTime(0);
     setVisibleSegments([]);
-    setIsPlaying(true);
+    setIsPlaying(false); // Start paused after reset
+    
+    if (onPause) {
+      onPause(0);
+    }
   };
   
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,7 +267,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
           onClick={handlePlayPause}
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          {isPlaying ? 'Pause' : 'Play'}
+          {isPlaying ? 'Pause' : 'Resume'}
         </button>
         <button 
           onClick={handleReset}
@@ -306,7 +367,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
                 
                 {/* Process label */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-lg">
-                  P{segment.processId}
+                  {segment.processId === -1 ? 'Idle' : `P${segment.processId}`}
                 </div>
               </div>
             );
@@ -366,49 +427,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttData, speed = 300 }) => {
               {currentTime.toFixed(1)}
             </div>
           </div>
-          
-          {/* Time markers at the bottom - filter if too many */}
-          {/* <div className="absolute w-full h-5 bottom-[-25px] px-8">
-            {(() => {
-              // Limit number of time markers based on total execution time
-              const maxMarkers = Math.min(Math.ceil(totalExecutionTime) + 1, 30);
-              const step = Math.max(1, Math.ceil(totalExecutionTime / 29));
-              
-              return Array.from({ length: maxMarkers }, (_, i) => {
-                const value = i * step;
-                if (value > totalExecutionTime) return null;
-                
-                return (
-                  <div 
-                    key={i} 
-                    className="absolute h-2.5 w-px bg-gray-400"
-                    style={{ left: `${(value / totalExecutionTime) * 100}%` }}
-                  >
-                    <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-                      {value}
-                    </div>
-                  </div>
-                );
-              }).filter(Boolean);
-            })()}
-          </div> */}
+        
         </div>
       </div>
       
-      {/* Scroll indicator - show only when chart is wider than container */}
-      {/* {chartWidth > 100 && (
-        <div className="flex justify-center mt-2 text-sm text-gray-500">
-          <span className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Scroll horizontally to view the complete chart
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </span>
-        </div>
-      )} */}
     </div>
   );
 };

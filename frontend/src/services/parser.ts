@@ -18,6 +18,7 @@ export interface ProcessStats {
 export interface SchedulerData {
   gantt_chart: GanttChartEntry[];
   process_stats: ProcessStats[];
+  scheduling_algorithm: string;
 }
 
 // Interface for input data to be saved
