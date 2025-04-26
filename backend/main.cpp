@@ -1,32 +1,15 @@
-#include "Parser.hpp"
-#include <iostream>
-using namespace std;
+#include "crow.h"
+//#include "crow_all.h"
 
-int main() {
-    string json_file_path = "../io/input.json";
+int main()
+{
+    crow::SimpleApp app; //define your crow application
 
-    try {
-        vector<Process> processes = Parser::getProcesses(json_file_path);
-        cout << "Processes:\n";
-        for (const auto& process : processes) {
-            cout << "Process ID: " << process.p_id
-                      << ", Arrival Time: " << process.arrival_time
-                      << ", Burst Time: " << process.burst_time
-                      << ", Priority: " << process.priority << "\n";
-        }
+    //define your endpoint at the root directory
+    CROW_ROUTE(app, "/")([](){
+        return "Hello world";
+    });
 
-        int time_slice = Parser::getTimeSlice(json_file_path);
-        cout << "Time Slice: " << time_slice << "\n";
-
-        int num_of_queues = Parser::getNumOfQueues(json_file_path);
-        cout << "Number of Queues: " << num_of_queues << "\n";
-
-        string scheduling_algorithm = Parser::getSchedulingAlgorithm(json_file_path);
-        cout << "Scheduling Algorithm: " << scheduling_algorithm << "\n";
-
-    } catch (const exception& e) {
-        cerr << "Error: " << e.what() << "\n";
-    }
-
-    return 0;
+    //set the port, set the app to run on multiple threads, and run the app
+    app.port(18080).multithreaded().run();
 }

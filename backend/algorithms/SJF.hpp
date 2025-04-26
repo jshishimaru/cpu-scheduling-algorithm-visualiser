@@ -2,8 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <queue>
-#include "Type.hpp"
-#include "json.hpp"
+#include "../Type.hpp"
+#include "../json.hpp"
 #include <climits>
 
 using namespace std;
@@ -34,6 +34,7 @@ json simulateSJF(const vector<Process>& processes) {
         int shortest_index = -1;
         int min_remaining_time = INT_MAX;
 
+        // Find the process with the shortest remaining burst time that has arrived
         for (int i = 0; i < n; i++) {
             if (sorted_processes[i].arrival_time <= current_time && !is_completed[i] &&
                 remaining_burst_time[i] < min_remaining_time) {
@@ -43,7 +44,17 @@ json simulateSJF(const vector<Process>& processes) {
         }
 
         if (shortest_index == -1) {
+            // Processor is idle
+            if (last_process_id != -1) {
+                gantt_chart.back()["end_time"] = current_time;
+            }
+            gantt_chart.push_back({
+                {"process_id", -1},
+                {"start_time", current_time},
+                {"ready_queue", vector<int>()}
+            });
             current_time++;
+            last_process_id = -1;
             continue;
         }
 
@@ -65,11 +76,14 @@ json simulateSJF(const vector<Process>& processes) {
 
         last_process_id = sorted_processes[shortest_index].p_id;
 
+        // Execute the process for 1 unit of time
         remaining_burst_time[shortest_index]--;
         current_time++;
 
+        // Check if a new process arrives during execution
         for (int i = 0; i < n; i++) {
             if (sorted_processes[i].arrival_time == current_time && !is_completed[i]) {
+                // Split the current Gantt chart entry
                 gantt_chart.back()["end_time"] = current_time;
                 gantt_chart.push_back({
                     {"process_id", sorted_processes[shortest_index].p_id},
@@ -85,6 +99,7 @@ json simulateSJF(const vector<Process>& processes) {
             }
         }
 
+        // If the process is completed
         if (remaining_burst_time[shortest_index] == 0) {
             is_completed[shortest_index] = true;
             completed++;
