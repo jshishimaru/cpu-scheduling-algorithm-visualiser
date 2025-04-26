@@ -3,7 +3,11 @@ export interface GanttChartEntry {
   process_id: number;
   start_time: number;
   end_time: number;
-  ready_queue: number[];
+  ready_queue?: number[];
+  queue_level?: number;
+  ready_queues?: {
+    [key: string]: number[];
+  };
 }
 
 export interface ProcessStats {
@@ -13,6 +17,7 @@ export interface ProcessStats {
   completion_time: number;
   turnaround_time: number;
   waiting_time: number;
+  final_queue_level: number;
 }
 
 export interface SchedulerData {

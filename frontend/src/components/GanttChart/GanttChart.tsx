@@ -67,6 +67,19 @@ const getBorderColor = (processId: number): string => {
   return colors[processId % colors.length];
 };
 
+// Get queue level color
+const getQueueLevelColor = (level: number): string => {
+  const colors = [
+    'bg-red-200',    // Level 0: High priority
+    'bg-yellow-200', // Level 1: Medium priority
+    'bg-green-200',  // Level 2: Low priority
+    'bg-blue-200',   // Level 3
+    'bg-purple-200', // Level 4
+  ];
+  
+  return colors[level % colors.length];
+};
+
 const GanttChart: React.FC<GanttChartProps> = ({ 
   ganttData, 
   speed = 300, 
@@ -112,23 +125,38 @@ const GanttChart: React.FC<GanttChartProps> = ({
       processId: number;
       startTime: number;
       endTime: number;
-      readyQueue: number[];
+      queueLevel: number | undefined;
+      readyQueue: number[] | undefined;
+      readyQueues: { [key: string]: number[] } | undefined;
     }[] = [];
     
+    // Check the first entry to determine the data format
+    const firstEntry = ganttData[0];
+    const isMultiLevelQueue = firstEntry.ready_queues !== undefined;
+    
+    // Start with the first entry
     let currentSegment = {
-      processId: ganttData[0].process_id,
-      startTime: ganttData[0].start_time,
-      endTime: ganttData[0].end_time,
-      readyQueue: [...ganttData[0].ready_queue]
+      processId: firstEntry.process_id,
+      startTime: firstEntry.start_time,
+      endTime: firstEntry.end_time,
+      queueLevel: firstEntry.queue_level,
+      readyQueue: firstEntry.ready_queue ? [...firstEntry.ready_queue] : undefined,
+      readyQueues: firstEntry.ready_queues ? { ...firstEntry.ready_queues } : undefined
     };
     
     for (let i = 1; i < ganttData.length; i++) {
       const entry = ganttData[i];
       
       // If this entry continues the same process, extend the current segment
-      if (entry.process_id === currentSegment.processId) {
+      if (entry.process_id === currentSegment.processId && entry.queue_level === currentSegment.queueLevel) {
         currentSegment.endTime = entry.end_time;
-        currentSegment.readyQueue = [...entry.ready_queue];
+        
+        // Update ready queue information
+        if (isMultiLevelQueue && entry.ready_queues) {
+          currentSegment.readyQueues = { ...entry.ready_queues };
+        } else if (entry.ready_queue) {
+          currentSegment.readyQueue = [...entry.ready_queue];
+        }
       } else {
         // Otherwise, save the current segment and start a new one
         segments.push({ ...currentSegment });
@@ -136,7 +164,9 @@ const GanttChart: React.FC<GanttChartProps> = ({
           processId: entry.process_id,
           startTime: entry.start_time,
           endTime: entry.end_time,
-          readyQueue: [...entry.ready_queue]
+          queueLevel: entry.queue_level,
+          readyQueue: entry.ready_queue ? [...entry.ready_queue] : undefined,
+          readyQueues: entry.ready_queues ? { ...entry.ready_queues } : undefined
         };
       }
     }
@@ -379,6 +409,9 @@ const GanttChart: React.FC<GanttChartProps> = ({
                 ? 'Idle (CPU waiting)' 
                 : `P${currentProcess.process_id}`}
             </span>
+            {currentProcess.queue_level !== undefined && (
+              <span className="ml-2 text-gray-600">(Queue {currentProcess.queue_level})</span>
+            )}
           </div>
         ) : (
           <div className="font-medium text-center">
@@ -411,6 +444,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                 
             const processColorClass = getProcessColor(segment.processId);
             const borderColorClass = getBorderColor(segment.processId);
+            const queueLevelClass = segment.queueLevel !== undefined ? getQueueLevelColor(segment.queueLevel) : '';
                 
             return (
               <div 
@@ -420,13 +454,20 @@ const GanttChart: React.FC<GanttChartProps> = ({
                   width: `${segmentWidth}%`,
                   left: `${segmentLeft}%`,
                 }}
-                title={`Process ${segment.processId === -1 ? 'Idle' : segment.processId}: ${segment.startTime} - ${segment.endTime}`}
+                title={`Process ${segment.processId === -1 ? 'Idle' : segment.processId}: ${segment.startTime} - ${segment.endTime}${segment.queueLevel !== undefined ? ` (Queue ${segment.queueLevel})` : ''}`}
               >
                 {/* Filled portion with translucent color */}
                 <div 
                   className={`absolute h-full ${processColorClass} backdrop-blur-sm transition-all duration-300 ease-out`}
                   style={{ width: `${filledWidth}%` }}
                 />
+                
+                {/* Queue level indicator (if available) */}
+                {segment.queueLevel !== undefined && (
+                  <div className="absolute top-0 right-0 px-1 text-xs rounded-bl bg-gray-100 text-gray-700 z-10">
+                    Q{segment.queueLevel}
+                  </div>
+                )}
                 
                 {/* Process label */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-lg">
@@ -520,6 +561,21 @@ const GanttChart: React.FC<GanttChartProps> = ({
         }
       </div>
       
+      {/* Queue level legend (if MLQ/MLFQ) */}
+      {ganttData.some(entry => entry.queue_level !== undefined) && (
+        <div className="mt-2 flex flex-wrap gap-2 justify-center">
+          <span className="text-xs text-gray-600 mr-1">Queue Levels:</span>
+          {Array.from(new Set(ganttData.filter(entry => entry.queue_level !== undefined).map(entry => entry.queue_level)))
+            .sort((a, b) => a! - b!)
+            .map(level => (
+              <div key={`level-${level}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
+                <div className={`w-4 h-4 ${getQueueLevelColor(level!)} border border-gray-400 rounded`}></div>
+                <span className="text-xs text-gray-600">Q{level}</span>
+              </div>
+            ))
+          }
+        </div>
+      )}
     </div>
   );
 };
