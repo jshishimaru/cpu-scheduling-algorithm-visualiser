@@ -346,13 +346,13 @@ const GanttChart: React.FC<GanttChartProps> = ({
   };
   
   return (
-    <div className="w-full max-w-4xl mx-auto my-5 p-5 rounded-lg shadow-md bg-white">
-      <h2 className="text-center text-xl font-bold mb-5 text-gray-800">Process Execution Gantt Chart</h2>
+    <div className="w-full max-w-full mx-auto my-2 p-3 rounded-lg shadow-sm bg-white">
+      <h2 className="text-center text-base font-semibold mb-2 text-gray-800">Process Execution Gantt Chart</h2>
       
-      <div className="flex flex-wrap items-center mb-3 gap-2">
+      <div className="flex flex-wrap items-center mb-2 gap-2">
         <button 
           onClick={handlePlayPause}
-          className={`px-4 py-2 text-white rounded-md transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${isPlaying 
+          className={`px-2 py-1 text-xs text-white rounded-md transition-colors font-medium focus:outline-none focus:ring-1 focus:ring-offset-1 ${isPlaying 
             ? 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500' 
             : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'}`}
         >
@@ -360,20 +360,20 @@ const GanttChart: React.FC<GanttChartProps> = ({
         </button>
         <button 
           onClick={handleReset}
-          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          className="px-2 py-1 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-offset-1"
         >
           Reset
         </button>
-        <div className="ml-auto font-medium">
+        <div className="ml-auto text-sm font-medium">
           Time: {currentTime.toFixed(1)} / {totalExecutionTime}
         </div>
       </div>
       
       {/* Speed controls */}
-      <div className="flex items-center mb-5 gap-3">
-        <span className="text-sm font-medium text-gray-700">Speed:</span>
-        <div className="flex items-center flex-1 gap-2">
-          <span className="text-sm text-gray-500">Faster</span>
+      <div className="flex items-center mb-2 gap-2">
+        <span className="text-xs font-medium text-gray-700">Speed:</span>
+        <div className="flex items-center flex-1 gap-1">
+          <span className="text-xs text-gray-500">Faster</span>
           <input
             type="range"
             min="50"
@@ -381,15 +381,15 @@ const GanttChart: React.FC<GanttChartProps> = ({
             step="50"
             value={animationSpeed}
             onChange={handleSpeedChange}
-            className="w-full h-2 rounded-lg appearance-none bg-gray-300 cursor-pointer"
+            className="w-full h-1 rounded-lg appearance-none bg-gray-300 cursor-pointer"
           />
-          <span className="text-sm text-gray-500">Slower</span>
+          <span className="text-xs text-gray-500">Slower</span>
         </div>
-        <span className="text-sm font-medium w-14 text-right">{animationSpeed}ms</span>
+        <span className="text-xs font-medium w-10 text-right">{animationSpeed}ms</span>
       </div>
       
       {/* Time slider */}
-      <div className="mb-4">
+      <div className="mb-2">
         <input
           type="range"
           min="0"
@@ -397,13 +397,13 @@ const GanttChart: React.FC<GanttChartProps> = ({
           step="0.1"
           value={currentTime}
           onChange={handleSliderChange}
-          className="w-full h-2 rounded-lg appearance-none bg-gray-300 cursor-pointer"
+          className="w-full h-1 rounded-lg appearance-none bg-gray-300 cursor-pointer"
         />
       </div>
       
-      <div className="flex justify-center mb-4 p-3 bg-gray-50 rounded-md shadow-sm">
+      <div className="flex justify-center mb-2 p-2 bg-gray-50 rounded-md shadow-sm">
         {currentProcess ? (
-          <div className="font-medium">
+          <div className="text-sm font-medium">
             Current Process: <span className="font-bold text-indigo-700">
               {currentProcess.process_id === -1 
                 ? 'Idle (CPU waiting)' 
@@ -414,16 +414,16 @@ const GanttChart: React.FC<GanttChartProps> = ({
             )}
           </div>
         ) : (
-          <div className="font-medium text-center">
+          <div className="text-sm font-medium text-center">
             {currentTime === 0 ? 'Ready to Start' : 'Execution Complete'}
           </div>
         )}
       </div>
       
       {/* Scrollable container for chart */}
-      <div className="relative w-full overflow-x-auto pb-6 rounded-lg px-4" ref={chartContainerRef}>
+      <div className="relative w-full overflow-x-auto pb-4 rounded-lg px-2" ref={chartContainerRef}>
         <div 
-          className="relative h-36 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
+          className="relative h-24 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
           style={{
             // Add padding before first segment and after last segment (5% on each side)
             paddingLeft: '5%',
@@ -449,7 +449,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
             return (
               <div 
                 key={index}
-                className={`absolute h-[40px] top-[15px] rounded-md overflow-hidden border-2 ${borderColorClass} shadow-md bg-white/80`}
+                className={`absolute h-[30px] top-[12px] rounded-md overflow-hidden border-2 ${borderColorClass} shadow-sm bg-white/80`}
                 style={{
                   width: `${segmentWidth}%`,
                   left: `${segmentLeft}%`,
@@ -464,13 +464,13 @@ const GanttChart: React.FC<GanttChartProps> = ({
                 
                 {/* Queue level indicator (if available) */}
                 {segment.queueLevel !== undefined && (
-                  <div className="absolute top-0 right-0 px-1 text-xs rounded-bl bg-gray-100 text-gray-700 z-10">
+                  <div className="absolute top-0 right-0 px-1 text-[10px] rounded-bl bg-gray-100 text-gray-700 z-10">
                     Q{segment.queueLevel}
                   </div>
                 )}
                 
                 {/* Process label */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-lg">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-800 font-bold z-10 text-sm">
                   {segment.processId === -1 ? 'Idle' : `P${segment.processId}`}
                 </div>
               </div>
@@ -478,7 +478,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
           })}
           
           {/* Separate Time Bars Section with adjusted positioning */}
-          <div className="absolute top-[70px] left-0 right-0 h-20 px-8">
+          <div className="absolute top-[55px] left-0 right-0 h-12 px-8">
             {/* Create a set of unique time points to avoid duplicates */}
             {(() => {
               const timePoints = new Set<number>();
@@ -515,11 +515,11 @@ const GanttChart: React.FC<GanttChartProps> = ({
                   }}
                 >
                   {/* Time line */}
-                  <div className="absolute top-0 w-0.5 h-5 bg-gray-500 rounded"></div>
+                  <div className="absolute top-0 w-0.5 h-3 bg-gray-500 rounded"></div>
                   
                   {/* Time label */}
-                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
-                    <div className="px-1.5 py-0.5 bg-white text-xs font-medium text-gray-700 border border-gray-300 rounded shadow-sm whitespace-nowrap">
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+                    <div className="px-1 py-0.5 bg-white text-[10px] font-medium text-gray-700 border border-gray-300 rounded shadow-sm whitespace-nowrap">
                       {time.toFixed(1)}
                     </div>
                   </div>
@@ -535,7 +535,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
               left: `${(currentTime / totalExecutionTime) * 100}%`,
             }}
           >
-            <div className="absolute top-[-18px] left-1/2 transform -translate-x-1/2 text-xs text-white font-bold bg-rose-600 px-2 py-0.5 rounded-md shadow-sm">
+            <div className="absolute top-[-15px] left-1/2 transform -translate-x-1/2 text-[10px] text-white font-bold bg-rose-600 px-1 py-0.5 rounded-md shadow-sm">
               {currentTime.toFixed(1)}
             </div>
           </div>
@@ -544,18 +544,18 @@ const GanttChart: React.FC<GanttChartProps> = ({
       </div>
       
       {/* Legend for process colors */}
-      <div className="mt-4 flex flex-wrap gap-2 justify-center">
-        <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
-          <div className="w-4 h-4 bg-gray-200 border border-gray-400 rounded"></div>
-          <span className="text-xs text-gray-600">Idle</span>
+      <div className="mt-2 flex flex-wrap gap-1 justify-center">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded-md">
+          <div className="w-3 h-3 bg-gray-200 border border-gray-400 rounded"></div>
+          <span className="text-[10px] text-gray-600">Idle</span>
         </div>
         {Array.from(new Set(ganttData.map(entry => entry.process_id)))
           .filter(pid => pid !== -1)
           .sort((a, b) => a - b)
           .map(pid => (
-            <div key={`legend-${pid}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
-              <div className={`w-4 h-4 ${getProcessColor(pid)} border ${getBorderColor(pid)} rounded`}></div>
-              <span className="text-xs text-gray-600">P{pid}</span>
+            <div key={`legend-${pid}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded-md">
+              <div className={`w-3 h-3 ${getProcessColor(pid)} border ${getBorderColor(pid)} rounded`}></div>
+              <span className="text-[10px] text-gray-600">P{pid}</span>
             </div>
           ))
         }
@@ -563,14 +563,14 @@ const GanttChart: React.FC<GanttChartProps> = ({
       
       {/* Queue level legend (if MLQ/MLFQ) */}
       {ganttData.some(entry => entry.queue_level !== undefined) && (
-        <div className="mt-2 flex flex-wrap gap-2 justify-center">
-          <span className="text-xs text-gray-600 mr-1">Queue Levels:</span>
+        <div className="mt-1 flex flex-wrap gap-1 justify-center">
+          <span className="text-[10px] text-gray-600 mr-1">Queue Levels:</span>
           {Array.from(new Set(ganttData.filter(entry => entry.queue_level !== undefined).map(entry => entry.queue_level)))
             .sort((a, b) => a! - b!)
             .map(level => (
-              <div key={`level-${level}`} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
-                <div className={`w-4 h-4 ${getQueueLevelColor(level!)} border border-gray-400 rounded`}></div>
-                <span className="text-xs text-gray-600">Q{level}</span>
+              <div key={`level-${level}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded-md">
+                <div className={`w-3 h-3 ${getQueueLevelColor(level!)} border border-gray-400 rounded`}></div>
+                <span className="text-[10px] text-gray-600">Q{level}</span>
               </div>
             ))
           }

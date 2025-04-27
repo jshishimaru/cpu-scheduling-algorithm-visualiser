@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { SchedulerData } from '../../services/types';
+import { Parser } from '../../services/parser';
 import VisualizationContainer from '../VisualizationContainer/VisualizationContainer';
 import NewProcessForm, { NewProcessData } from '../NewProcessForm/NewProcessForm';
 import NewProcessTable from '../NewProcessTable/NewProcessTable';
 import PauseNotification from '../PauseNotification/PauseNotification';
 import RescheduleButton from '../RescheduleButton/RescheduleButton';
 import AlgorithmSelector, { AlgorithmParams } from '../AlgorithmSelector/AlgorithmSelector';
+import GraphsContainer from '../Graphs/GraphsContainer';
 
 interface ProcessManagerProps {
   schedulerData: SchedulerData;
   onReschedule: (newProcesses: NewProcessData[], algorithm?: string, params?: AlgorithmParams) => void;
   onReset?: () => void; // Add reset handler prop
   loading?: boolean; // Add loading prop
+  parser?: Parser | null;
+  selectedChart?: string;
+  onChartChange?: (chart: string) => void;
+  chartOptions?: Array<{value: string, label: string}>;
 }
 
 const ProcessManager: React.FC<ProcessManagerProps> = ({ 
   schedulerData, 
   onReschedule,
   onReset,
-  loading = false
+  loading = false,
+  parser,
+  selectedChart = 'turnaround',
+  onChartChange,
+  chartOptions
 }) => {
   const [isPaused, setIsPaused] = useState<boolean>(true);
   const [pausedTime, setPausedTime] = useState<number>(0);
@@ -87,6 +97,42 @@ const ProcessManager: React.FC<ProcessManagerProps> = ({
     // Increment the next process ID for the form
     setNextProcessId(prevId => prevId + 1);
   };
+
+  // New handler for editing a process
+  const handleEditProcess = (processId: number, updatedProcess: NewProcessData) => {
+    console.log(`Editing process ${processId}:`, updatedProcess);
+    
+    // Update the process in allProcesses
+    setAllProcesses(prev => 
+      prev.map(process => 
+        process.id === processId ? updatedProcess : process
+      )
+    );
+    
+    // If the process is in newProcesses, update it there too
+    const isNewProcess = newProcesses.some(p => p.id === processId);
+    if (isNewProcess) {
+      setNewProcesses(prev => 
+        prev.map(process => 
+          process.id === processId ? updatedProcess : process
+        )
+      );
+    }
+  };
+  
+  // New handler for deleting a process
+  const handleDeleteProcess = (processId: number) => {
+    console.log(`Deleting process ${processId}`);
+    
+    // Remove the process from allProcesses
+    setAllProcesses(prev => prev.filter(process => process.id !== processId));
+    
+    // If the process is in newProcesses, remove it from there too
+    const isNewProcess = newProcesses.some(p => p.id === processId);
+    if (isNewProcess) {
+      setNewProcesses(prev => prev.filter(process => process.id !== processId));
+    }
+  };
   
   const handleReschedule = () => {
     if (allProcesses.length === 0 && newProcesses.length === 0) {
@@ -145,55 +191,63 @@ const ProcessManager: React.FC<ProcessManagerProps> = ({
   }, [loading]);
 
   return (
-    <div className="container mx-auto px-4 py-4">
-      {isPaused && <PauseNotification pausedTime={pausedTime} />}
+    <div className="w-full p-0.5">
       
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-1">
         {/* Left Column - Algorithm selector and New Process Form */}
-        <div className="w-full md:w-1/3 lg:w-1/4 space-y-4">
-          {/* Algorithm selector - always visible */}
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <AlgorithmSelector
-              selectedAlgorithm={selectedAlgorithm}
-              onAlgorithmChange={handleAlgorithmChange}
-              disabled={allProcesses.length > 0}
-            />
-          </div>
+        <div className="w-full md:w-1/3 lg:w-1/3 xl:w-2/5 space-y-1">
+          {/* Algorithm selector */}
+          <AlgorithmSelector
+            selectedAlgorithm={selectedAlgorithm}
+            onAlgorithmChange={handleAlgorithmChange}
+            disabled={allProcesses.length > 0}
+          />
         
-          {/* New Process Form - always visible */}
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <NewProcessForm 
-              currentTime={pausedTime} 
-              onAddProcess={handleAddProcess}
-              isVisible={true}
-              nextProcessId={nextProcessId}
-            />
-          </div>
+          {/* New Process Form */}
+          <NewProcessForm 
+            currentTime={pausedTime} 
+            onAddProcess={handleAddProcess}
+            isVisible={true}
+            nextProcessId={nextProcessId}
+          />
           
           {/* Reschedule button */}
-          <div className="mt-4">
+          <div>
             <RescheduleButton onClick={handleReschedule} loading={loading} />
+          </div>
+
+          {/* Graphs Container */}
+          <div>
+            <GraphsContainer 
+              parser={parser ?? null}
+              selectedChart={selectedChart}
+              onChartChange={onChartChange}
+              chartOptions={chartOptions}
+            />
           </div>
         </div>
         
         {/* Right Column - Process Table and Visualization */}
-        <div className="w-full md:w-2/3 lg:w-3/4">
+        <div className="w-full md:w-2/3 lg:w-2/3 xl:w-3/5">
           {/* All processes table - always visible if there are any processes */}
           {allProcesses.length > 0 && (
-            <div className="mb-4 bg-white p-4 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">All Processes</h2>
-              <NewProcessTable processes={allProcesses} />
+            <div className="mb-1 bg-white p-2 rounded-lg shadow-sm">
+              <h2 className="text-base font-semibold mb-1 text-gray-800">All Processes</h2>
+              <NewProcessTable 
+                processes={allProcesses} 
+                onEditProcess={handleEditProcess}
+                onDeleteProcess={handleDeleteProcess}
+              />
             </div>
           )}
           
-          
           {/* Visualization Container */}
-          <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="bg-white p-1 rounded-lg shadow-sm">
             <VisualizationContainer
               schedulerData={schedulerData}
               onPause={handleChartPause}
               onResume={handleChartResume}
-              onReset={handleReset} // Pass down the reset handler
+              onReset={handleReset}
             />
           </div>
         </div>

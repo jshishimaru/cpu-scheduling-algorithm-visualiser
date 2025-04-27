@@ -164,10 +164,6 @@ The frontend will be accessible at http://localhost:3000
 - `/api/mlq-aging` - Endpoint for MLQ with aging
 - `/api/sjf-aging` - Endpoint for SJF with aging
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## License
 
 This project is licensed under the terms of the LICENSE file included in the repository.

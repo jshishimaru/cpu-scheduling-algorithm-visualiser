@@ -135,11 +135,11 @@ function App() {
   
   return (
     <div className="App">
-      <header className="bg-gray-800 text-white p-4 mb-6">
+      {/* <header className="bg-gray-800 text-white p-4 mb-6">
         <h1 className="text-3xl font-bold">CPU Scheduler Simulator</h1>
-      </header>
+      </header> */}
       
-      <main className="container mx-auto px-4">
+      <main className="w-full px-0.5">
         {error && (
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
             <p className="font-bold">Error</p>
@@ -161,41 +161,16 @@ function App() {
           onReschedule={handleReschedule}
           onReset={handleReset} // Pass down reset handler
           loading={loading}
+          parser={parser}
+          selectedChart={selectedChart}
+          onChartChange={(chart: string) => setSelectedChart(chart)}
+          chartOptions={chartOptions}
         />
         
-        {/* Graphs container for analytics */}
-        {parser && !loading && (
-          <div className="mt-10">
-            <h2 className="text-2xl font-bold mb-4">Performance Analytics</h2>
-            
-            {/* Chart selector */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Chart Type:
-              </label>
-              <select
-                value={selectedChart}
-                onChange={(e) => setSelectedChart(e.target.value)}
-                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {chartOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <GraphsContainer
-              parser={parser}
-              algorithmName={algorithmName}
-              selectedChart={selectedChart}
-            />
-          </div>
-        )}
+        {/* Graphs container moved to ProcessManager component */}
       </main>
       
-      <footer className="mt-12 p-4 bg-gray-100 text-center text-gray-600">
+      <footer className="mt-8 p-2 bg-gray-100 text-center text-gray-600 text-sm">
         <p>CPU Scheduling Simulator &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>

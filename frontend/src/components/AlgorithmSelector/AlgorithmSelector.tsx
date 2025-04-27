@@ -117,11 +117,11 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
   };
   
   return (
-    <div className="w-full max-w-lg mx-auto p-5 border border-gray-200 rounded-lg shadow-sm bg-white my-4">
-      <h3 className="text-lg font-semibold mb-4 text-gray-800">Select Scheduling Algorithm</h3>
+    <div className="w-full mx-auto p-3 border border-gray-200 rounded-lg shadow-sm bg-white">
+      <h3 className="text-base font-semibold mb-2 text-gray-800">Scheduling Algorithm</h3>
       
-      <div className="mb-4">
-        <label htmlFor="algorithm" className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="mb-2">
+        <label htmlFor="algorithm" className="block text-xs font-medium text-gray-700 mb-1">
           Algorithm:
         </label>
         <select
@@ -129,7 +129,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
           value={selectedAlgorithm}
           onChange={handleAlgorithmChange}
           disabled={disabled}
-          className={`w-full p-2 border border-gray-300 rounded-md ${
+          className={`w-full py-1 px-2 text-sm border border-gray-300 rounded-md ${
             disabled ? 'bg-gray-100 cursor-not-allowed' : ''
           }`}
         >
@@ -145,11 +145,11 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
       </div>
       
       {/* Algorithm specific parameters */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* Time Quantum for RR, MLQ and MLFQ */}
         {requiresTimeQuantum && (
           <div>
-            <label htmlFor="timeQuantum" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="timeQuantum" className="block text-xs font-medium text-gray-700 mb-1">
               Time Quantum:
             </label>
             <input
@@ -159,7 +159,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
               value={timeQuantum}
               onChange={handleTimeQuantumChange}
               disabled={disabled}
-              className={`w-full p-2 border border-gray-300 rounded-md ${
+              className={`w-full py-1 px-2 text-sm border border-gray-300 rounded-md ${
                 disabled ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />
@@ -169,7 +169,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
         {/* Number of Queues for MLQ and MLFQ */}
         {requiresQueues && (
           <div>
-            <label htmlFor="numberOfQueues" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="numberOfQueues" className="block text-xs font-medium text-gray-700 mb-1">
               Number of Queues:
             </label>
             <input
@@ -179,13 +179,13 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
               value={numberOfQueues}
               onChange={handleNumberOfQueuesChange}
               disabled={disabled}
-              className={`w-full p-2 border border-gray-300 rounded-md ${
+              className={`w-full py-1 px-2 text-sm border border-gray-300 rounded-md ${
                 disabled ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />
             {requiresQueues && (
-              <p className="mt-1 text-sm text-gray-500">
-                For {selectedAlgorithm} algorithm, process priority should not exceed the number of queues ({numberOfQueues}).
+              <p className="mt-0.5 text-xs text-gray-500">
+                Process priority should not exceed {numberOfQueues} queues.
               </p>
             )}
           </div>
@@ -194,7 +194,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
         {/* Aging Threshold for algorithms with aging */}
         {requiresAging && (
           <div>
-            <label htmlFor="agingThreshold" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="agingThreshold" className="block text-xs font-medium text-gray-700 mb-1">
               Aging Threshold:
             </label>
             <input
@@ -205,50 +205,50 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
               value={agingThreshold}
               onChange={handleAgingThresholdChange}
               disabled={disabled}
-              className={`w-full p-2 border border-gray-300 rounded-md ${
+              className={`w-full py-1 px-2 text-sm border border-gray-300 rounded-md ${
                 disabled ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-0.5 text-xs text-gray-500">
               {selectedAlgorithm === 'SJF_Aging' 
-                ? 'Lower values make aging faster (waiting processes get higher priority sooner)' 
+                ? 'Lower values make aging faster' 
                 : 'Lower values make promotion between queues happen more quickly'}
             </p>
           </div>
         )}
         
         {requiresQueues && requiresTimeQuantum && (
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-700">
+          <div className="mt-1 p-1 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-xs text-blue-700">
               <span className="font-medium">Note:</span> {
-                selectedAlgorithm === 'MLQ' ? 'Multi-Level Queue' : 
-                selectedAlgorithm === 'MLQ_Aging' ? 'Multi-Level Queue with Aging' : 
-                'Multi-Level Feedback Queue'
-              } requires both time quantum and number of queues settings.
+                selectedAlgorithm === 'MLQ' ? 'MLQ' : 
+                selectedAlgorithm === 'MLQ_Aging' ? 'MLQ with Aging' : 
+                'MLFQ'
+              } uses both time quantum and queue settings.
             </p>
           </div>
         )}
         
         {/* Help text for algorithms with aging */}
         {requiresAging && (
-          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-700">
-              <span className="font-medium">Aging:</span> This algorithm uses process aging to prevent starvation by increasing priority of waiting processes over time.
+          <div className="mt-1 p-1 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-xs text-green-700">
+              <span className="font-medium">Aging:</span> Prevents starvation by increasing priority over time.
             </p>
           </div>
         )}
         
         {/* Help text for algorithms that require priority */}
         {requiresPriority && !requiresQueues && (
-          <div className="text-sm text-blue-600">
+          <div className="text-xs text-blue-600 mt-1">
             <p>This algorithm requires priority values for each process.</p>
           </div>
         )}
       </div>
       
       {disabled && (
-        <div className="mt-4 text-sm text-amber-600">
-          Clear new processes before changing the scheduling algorithm.
+        <div className="mt-2 text-xs text-amber-600">
+          Clear new processes before changing algorithm.
         </div>
       )}
     </div>

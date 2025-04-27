@@ -73,17 +73,15 @@ const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
     schedulerData.scheduling_algorithm?.toUpperCase().includes('MULTI');
 
   return (
-    <div className="container mx-auto px-4 py-8">      
-      {/* Wrapper for visualization components */}
-      <div className="space-y-8">
-        {/* Gantt Chart */}
+    <div className="w-full px-0 py-1">   
+      <div className="mb-1">
         <GanttChart 
           ganttData={chartData} 
           initialTime={currentTime}
           onPause={handlePause}
           onResume={handleResume}
           onTimeUpdate={handleTimeUpdate}
-          onReset={handleReset} // Pass down the reset handler
+          onReset={handleReset}
         />
         
         {/* Conditionally render either Ready Queue or Multi-Level Queue */}
@@ -100,38 +98,37 @@ const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
             isPaused={internalPaused}
           />
         )}
-      </div>
-      
+      </div>   
       {/* Process Information Table */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium mb-3 text-gray-800">Process Details</h2>
-        <div className="overflow-x-auto rounded-lg shadow">
-          <table className="min-w-full bg-white">
+      <div className="mb-1">
+        <h2 className="text-base font-medium mb-1 text-gray-800">Process Details</h2>
+        <div className="overflow-x-auto rounded-lg shadow-sm">
+          <table className="min-w-full bg-white text-xs">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Process ID</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Arrival Time</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Burst Time</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Time</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turnaround Time</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waiting Time</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">PID</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Arrival</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Burst</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Completion</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Turnaround</th>
+                <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Waiting</th>
                 {isMultiLevelQueue && (
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority Level</th>
+                  <th className="py-1 px-2 text-left font-medium text-gray-500 uppercase tracking-wider">Queue</th>
                 )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {schedulerData.process_stats?.map((process: ProcessStats) => (
                 <tr key={process.process_id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-900">P{process.process_id}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{process.arrival_time}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{process.burst_time}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{process.completion_time}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{process.turnaround_time}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{process.waiting_time}</td>
+                  <td className="py-1 px-2 font-medium text-gray-900">P{process.process_id}</td>
+                  <td className="py-1 px-2 text-gray-500">{process.arrival_time}</td>
+                  <td className="py-1 px-2 text-gray-500">{process.burst_time}</td>
+                  <td className="py-1 px-2 text-gray-500">{process.completion_time}</td>
+                  <td className="py-1 px-2 text-gray-500">{process.turnaround_time}</td>
+                  <td className="py-1 px-2 text-gray-500">{process.waiting_time}</td>
                   {isMultiLevelQueue && (
-                    <td className="py-3 px-4 text-sm text-gray-500">
-                      {process.final_queue_level !== undefined ? `Queue ${process.final_queue_level}` : 'N/A'}
+                    <td className="py-1 px-2 text-gray-500">
+                      {process.final_queue_level !== undefined ? `Q${process.final_queue_level}` : 'N/A'}
                     </td>
                   )}
                 </tr>
@@ -140,7 +137,6 @@ const VisualizationContainer: React.FC<VisualizationContainerProps> = ({
           </table>
         </div>
       </div>
-      
     </div>
   );
 };
