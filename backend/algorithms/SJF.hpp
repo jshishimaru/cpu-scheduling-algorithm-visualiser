@@ -121,6 +121,7 @@ public:
                     {"process_id", sorted_processes[shortest_index].p_id},
                     {"arrival_time", sorted_processes[shortest_index].arrival_time},
                     {"burst_time", sorted_processes[shortest_index].burst_time},
+                    {"priority", sorted_processes[shortest_index].priority},
                     {"completion_time", completion_time},
                     {"turnaround_time", turnaround_time},
                     {"waiting_time", waiting_time}

@@ -20,18 +20,40 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
 }) => {
   const [timeQuantum, setTimeQuantum] = useState<number>(1);
   const [numberOfQueues, setNumberOfQueues] = useState<number>(3);
+  const [lastSelectedAlgorithm, setLastSelectedAlgorithm] = useState<string>(selectedAlgorithm);
 
   // Determine if the current algorithm requires priority
-  const requiresPriority = selectedAlgorithm === 'Priority' || selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ';
+  const requiresPriority = selectedAlgorithm === 'Priority' || selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ' || 
+                           selectedAlgorithm === 'MLQ_Aging';
   
   // Determine if the algorithm requires time quantum
-  const requiresTimeQuantum = selectedAlgorithm === 'RR' || selectedAlgorithm === 'MLFQ' || selectedAlgorithm === 'MLQ';
+  const requiresTimeQuantum = selectedAlgorithm === 'RR' || selectedAlgorithm === 'MLFQ' || selectedAlgorithm === 'MLQ' || 
+                              selectedAlgorithm === 'MLQ_Aging';
   
   // Determine if the algorithm requires number of queues
-  const requiresQueues = selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ';
-  
-  // Update params whenever relevant values change
+  const requiresQueues = selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ' || selectedAlgorithm === 'MLQ_Aging';
+
+  // Reset parameters when algorithm changes
   useEffect(() => {
+    // Default values when switching algorithms
+    if (!requiresTimeQuantum && timeQuantum !== 1) {
+      setTimeQuantum(1);
+    }
+    
+    if (!requiresQueues && numberOfQueues !== 3) {
+      setNumberOfQueues(3);
+    }
+  }, [selectedAlgorithm, requiresTimeQuantum, requiresQueues]);
+  
+  // Update params whenever relevant values change, but not on every render
+  useEffect(() => {
+    // Skip the initial render
+    if (lastSelectedAlgorithm !== selectedAlgorithm) {
+      setLastSelectedAlgorithm(selectedAlgorithm);
+      return;
+    }
+
+    // Only update parameters when they actually change, not on every render
     const params: AlgorithmParams = {};
     
     if (requiresTimeQuantum) {
@@ -45,16 +67,19 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
     
     if (requiresPriority) {
       params.requiresPriority = true;
-      if (selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ') {
+      if (selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ' || selectedAlgorithm === 'MLQ_Aging') {
         params.maxPriority = numberOfQueues;
       }
     }
     
+    // Only call when parameters change, not when algorithm changes
     onAlgorithmChange(selectedAlgorithm, params);
-  }, [selectedAlgorithm, timeQuantum, numberOfQueues, requiresPriority, requiresTimeQuantum, requiresQueues, onAlgorithmChange]);
+  }, [timeQuantum, numberOfQueues]);
 
   const handleAlgorithmChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onAlgorithmChange(e.target.value);
+    const newAlgorithm = e.target.value;
+    setLastSelectedAlgorithm(newAlgorithm);
+    onAlgorithmChange(newAlgorithm);
   };
   
   const handleTimeQuantumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,8 +115,10 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
         >
           <option value="FCFS">First Come First Serve (FCFS)</option>
           <option value="SJF">Shortest Job First (SJF)</option>
+          <option value="SJF_Aging">Shortest Job First with Aging</option>
           <option value="RR">Round Robin (RR)</option>
           <option value="MLQ">Multi-Level Queue (MLQ)</option>
+          <option value="MLQ_Aging">Multi-Level Queue with Aging</option>
           <option value="MLFQ">Multi-Level Feedback Queue (MLFQ)</option>
           <option value="Priority">Priority Scheduling</option>
         </select>
@@ -138,7 +165,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
             />
             {requiresQueues && (
               <p className="mt-1 text-sm text-gray-500">
-                For MLQ/MLFQ, process priority should not exceed the number of queues ({numberOfQueues}).
+                For {selectedAlgorithm} algorithm, process priority should not exceed the number of queues ({numberOfQueues}).
               </p>
             )}
           </div>
@@ -147,7 +174,11 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
         {requiresQueues && requiresTimeQuantum && (
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-700">
-              <span className="font-medium">Note:</span> {selectedAlgorithm === 'MLQ' ? 'Multi-Level Queue' : 'Multi-Level Feedback Queue'} requires both time quantum and number of queues settings.
+              <span className="font-medium">Note:</span> {
+                selectedAlgorithm === 'MLQ' ? 'Multi-Level Queue' : 
+                selectedAlgorithm === 'MLQ_Aging' ? 'Multi-Level Queue with Aging' : 
+                'Multi-Level Feedback Queue'
+              } requires both time quantum and number of queues settings.
             </p>
           </div>
         )}

@@ -151,7 +151,9 @@ const NormalizedPerformanceRadarChart: React.FC<NormalizedPerformanceRadarChartP
         max: 100,
         ticks: {
           stepSize: 20,
-          callback: (value: number) => `${value}%`,
+          callback: function (tickValue: string | number) {
+            return `${tickValue}%`;
+          },
         },
         pointLabels: {
           font: {

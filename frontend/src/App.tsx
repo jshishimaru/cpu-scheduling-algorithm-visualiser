@@ -86,10 +86,18 @@ function App() {
   const handleReset = () => {
     // Increment key to force ProcessManager to remount
     setResetKey(prev => prev + 1);
-    // Reset to initial data
+    
+    // Create empty scheduler data instead of using dummy data
+    const emptyData = {
+      scheduling_algorithm: "",
+      gantt_chart: [],
+      process_stats: []
+    };
+    
+    // Reset to empty data
     const initialParser = new Parser();
-    if (initialParser.parse(dummySchedulerData)) {
-      setSchedulerData(dummySchedulerData);
+    if (initialParser.parse(emptyData)) {
+      setSchedulerData(emptyData);
       setParser(initialParser);
     }
   };

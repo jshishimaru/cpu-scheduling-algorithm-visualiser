@@ -6,7 +6,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { GanttChartEntry } from '../../services/parser';
+import { GanttChartEntry } from '../../services/types';
 
 ChartJS.register(
   ArcElement,

@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { SchedulerInput, SchedulerData, Parser, MLQSchedulerData } from './parser';
+import {Parser} from './parser'
+import { SchedulerInput, SchedulerData, MLQSchedulerData } from './types';
 
 /**
  * Service for handling API requests to the scheduler backend

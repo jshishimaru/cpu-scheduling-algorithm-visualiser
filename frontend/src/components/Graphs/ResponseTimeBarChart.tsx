@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { GanttChartEntry, ProcessStats } from '../../services/parser';
+import { GanttChartEntry, ProcessStats } from '../../services/types';
 
 ChartJS.register(
   CategoryScale,

@@ -1,0 +1,35 @@
+{
+  "scheduling_type": "SJF",
+  "processes": [
+    {
+      "p_id": 1,
+      "arrival_time": 0,
+      "burst_time": 7,
+      "priority": 2
+    },
+    {
+      "p_id": 2,
+      "arrival_time": 1,
+      "burst_time": 3,
+      "priority": 1
+    },
+    {
+      "p_id": 3,
+      "arrival_time": 3,
+      "burst_time": 1,
+      "priority": 4
+    },
+    {
+      "p_id": 4,
+      "arrival_time": 4,
+      "burst_time": 5,
+      "priority": 3
+    },
+    {
+      "p_id": 5,
+      "arrival_time": 5,
+      "burst_time": 2,
+      "priority": 5
+    }
+  ]
+}

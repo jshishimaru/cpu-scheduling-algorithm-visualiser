@@ -12,7 +12,6 @@ const NewProcessTable: React.FC<NewProcessTableProps> = ({ processes }) => {
 
   return (
     <div className="mt-8 mb-4">
-      <h3 className="text-lg font-semibold mb-3">Pending New Processes</h3>
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">

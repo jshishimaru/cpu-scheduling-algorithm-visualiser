@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GanttChartEntry } from '../../services/parser';
+import { GanttChartEntry } from '../../services/types';
 
 interface GanttChartProps {
   ganttData: GanttChartEntry[];

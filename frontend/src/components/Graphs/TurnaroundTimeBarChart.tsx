@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { ProcessStats } from '../../services/parser';
+import { ProcessStats } from '../../services/types';
 
 // Register Chart.js components
 ChartJS.register(

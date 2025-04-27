@@ -251,6 +251,9 @@ public:
 			MLQ mlq;
 			json result = mlq.schedule(processes, num_queues, base_quantum);
 			
+			// Ensure the result has the correct status
+			result["status"] = "success";
+			
 			return crow::response(200, result.dump());
 		} catch (const std::exception& e) {
 			json error_json = {
@@ -295,6 +298,9 @@ public:
             // Run MLFQ algorithm
             MLFQ mlfq(base_quantum, num_queues);
             json result = mlfq.schedule(processes);
+            
+            // Ensure the result has the correct status
+            result["status"] = "success";
             
             return crow::response(200, result.dump());
         } catch (const std::exception& e) {
@@ -341,6 +347,9 @@ public:
             MLQAging mlq_aging;
             json result = mlq_aging.schedule(processes, num_queues, base_quantum);
             
+            // Ensure the result has the correct status
+            result["status"] = "success";
+            
             return crow::response(200, result.dump());
         } catch (const std::exception& e) {
             json error_json = {
@@ -383,7 +392,10 @@ public:
             
             // Run SJF algorithm
             SJF_Aging sjf_aging;
-            json result = sjf_aging.schedule(processes);
+            json result = sjf_aging.schedule(processes, aging_threshold);
+            
+            // Ensure the result has the correct status
+            result["status"] = "success";
             
             return crow::response(200, result.dump());
         } catch (const std::exception& e) {

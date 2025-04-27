@@ -1,0 +1,37 @@
+{
+  "scheduling_type": "MLFQ",
+  "num_queues": 3,
+  "quantum": 2,
+  "processes": [
+    {
+      "p_id": 1,
+      "arrival_time": 0,
+      "burst_time": 7,
+      "priority": 0
+    },
+    {
+      "p_id": 2,
+      "arrival_time": 2,
+      "burst_time": 4,
+      "priority": 0
+    },
+    {
+      "p_id": 3,
+      "arrival_time": 4,
+      "burst_time": 9,
+      "priority": 0
+    },
+    {
+      "p_id": 4,
+      "arrival_time": 6,
+      "burst_time": 3,
+      "priority": 0
+    },
+    {
+      "p_id": 5,
+      "arrival_time": 8,
+      "burst_time": 5,
+      "priority": 0
+    }
+  ]
+}

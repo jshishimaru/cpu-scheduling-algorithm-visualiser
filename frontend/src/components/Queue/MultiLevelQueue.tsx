@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { GanttChartEntry } from '../../services/parser';
+import { GanttChartEntry } from '../../services/types';
 
 interface MultiLevelQueueProps {
   ganttData: GanttChartEntry[];

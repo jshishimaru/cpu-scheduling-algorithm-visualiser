@@ -1,0 +1,35 @@
+{
+  "scheduling_type": "FCFS",
+  "processes": [
+    {
+      "p_id": 1,
+      "arrival_time": 0,
+      "burst_time": 6,
+      "priority": 3
+    },
+    {
+      "p_id": 2,
+      "arrival_time": 2,
+      "burst_time": 4,
+      "priority": 1
+    },
+    {
+      "p_id": 3,
+      "arrival_time": 4,
+      "burst_time": 2,
+      "priority": 4
+    },
+    {
+      "p_id": 4,
+      "arrival_time": 6,
+      "burst_time": 8,
+      "priority": 2
+    },
+    {
+      "p_id": 5,
+      "arrival_time": 8,
+      "burst_time": 3,
+      "priority": 5
+    }
+  ]
+}

@@ -13,13 +13,14 @@ using namespace std;
 using json = nlohmann::json;
 
 class SJF_Aging {
-private:
-    const float AGING_FACTOR = 0.5;
-
 public:
-    json schedule(const vector<Process>& processes) {
+    json schedule(const vector<Process>& processes, int aging_threshold = 50) {
         vector<json> gantt_chart;
         vector<json> process_stats;
+
+        // Calculate aging factor based on threshold (0-100)
+        // Higher threshold means slower aging, lower threshold means faster aging
+        const float AGING_FACTOR = static_cast<float>(aging_threshold) / 100.0f;
 
         vector<Process> sorted_processes = processes;
         sort(sorted_processes.begin(), sorted_processes.end(), [](const Process& a, const Process& b) {
@@ -140,6 +141,7 @@ public:
                     {"process_id", sorted_processes[selected_index].p_id},
                     {"arrival_time", sorted_processes[selected_index].arrival_time},
                     {"burst_time", sorted_processes[selected_index].burst_time},
+                    {"priority", sorted_processes[selected_index].priority},
                     {"completion_time", completion_time},
                     {"turnaround_time", turnaround_time},
                     {"waiting_time", waiting_time},

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GanttChartEntry } from '../../services/parser';
+import { GanttChartEntry } from '../../services/types';
 
 interface ReadyQueueProps {
   ganttData: GanttChartEntry[];
@@ -22,11 +22,11 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({
   // Use memo to determine the queued processes based on current time
   const queuedProcesses = React.useMemo(() => {
     if (currentEntry) {
-      return currentEntry.ready_queue;
+      return currentEntry.ready_queue || [];
     } 
     
     if (currentTime === 0 && ganttData.length > 0) {
-      return ganttData[0].ready_queue;
+      return ganttData[0].ready_queue || [];
     } 
     
     if (currentTime >= Math.max(...ganttData.map(entry => entry.end_time))) {
@@ -39,7 +39,7 @@ const ReadyQueue: React.FC<ReadyQueueProps> = ({
       .sort((a, b) => b.end_time - a.end_time);
     
     if (previousEntries.length > 0) {
-      return previousEntries[0].ready_queue;
+      return previousEntries[0].ready_queue || [];
     }
     
     return [];

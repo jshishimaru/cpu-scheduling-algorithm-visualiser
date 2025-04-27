@@ -163,6 +163,7 @@ public:
             stats_row["process_id"] = sorted[i].p_id;
             stats_row["arrival_time"] = sorted[i].arrival_time;
             stats_row["burst_time"] = sorted[i].burst_time;
+            stats_row["priority"] = sorted[i].priority;
             stats_row["completion_time"] = comp_time;
             stats_row["turnaround_time"] = turn_around;
             stats_row["waiting_time"] = waiting;
