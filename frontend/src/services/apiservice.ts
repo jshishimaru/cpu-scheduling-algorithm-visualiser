@@ -61,18 +61,21 @@ export class ApiService {
    * @param algorithmType - Selected scheduling algorithm
    * @param timeQuantum - Optional time quantum for RR, MLQ, MLFQ
    * @param numOfQueues - Optional number of queues for MLQ, MLFQ
+   * @param agingThreshold - Optional aging threshold for aging algorithms
    * @returns Properly formatted SchedulerInput object
    */
   prepareSchedulerInput(
     processes: any[],
     algorithmType: string,
     timeQuantum?: number,
-    numOfQueues?: number
+    numOfQueues?: number,
+    agingThreshold?: number
   ): SchedulerInput {
     return {
       scheduling_type: algorithmType,
       quantum: timeQuantum,
       num_of_queues: numOfQueues,
+      aging_threshold: agingThreshold,
       processes: processes.map(p => ({
         p_id: parseInt(p.id.toString()), // Convert to number to ensure consistency with backend
         arrival_time: p.arrivalTime,
@@ -98,6 +101,52 @@ export class ApiService {
    */
   async scheduleMLFQ(schedulerInput: SchedulerInput): Promise<MLQSchedulerData | null> {
     return this.scheduleMultiLevelQueue(schedulerInput, '/api/mlfq');
+  }
+  
+  /**
+   * Send process data to the backend for Multi-Level Queue with Aging scheduling
+   * @param schedulerInput - The input data containing processes and MLQ configuration with aging
+   * @returns Promise with the parsed MLQ scheduler data
+   */
+  async scheduleMLQAging(schedulerInput: SchedulerInput): Promise<MLQSchedulerData | null> {
+    return this.scheduleMultiLevelQueue(schedulerInput, '/api/mlq-aging');
+  }
+  
+  /**
+   * Send process data to the backend for SJF with Aging scheduling
+   * @param schedulerInput - The input data containing processes and SJF configuration with aging
+   * @returns Promise with the parsed scheduler data
+   */
+  async scheduleSJFAging(schedulerInput: SchedulerInput): Promise<SchedulerData | null> {
+    try {
+      console.log('Sending SJF Aging request to backend:', schedulerInput);
+	
+      const response = await axios.post(
+        `${this.baseUrl}/api/sjf-aging`,
+        schedulerInput,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log('Received response from SJF Aging endpoint:', response.data);
+
+      if (response.status === 200 && this.parser.parse(response.data)) {
+        return {
+          gantt_chart: this.parser.getGanttChart(),
+          process_stats: this.parser.getProcessStats(),
+          scheduling_algorithm: response.data.scheduling_algorithm || schedulerInput.scheduling_type
+        };
+      } else {
+        console.error('Failed to parse SJF Aging response data');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error sending process data to SJF Aging endpoint:', error);
+      return null;
+    }
   }
 
   /**

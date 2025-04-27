@@ -8,6 +8,8 @@ export interface GanttChartEntry {
   ready_queues?: {
     [key: string]: number[];
   };
+  // Add direct reference to queues array for MLQ data
+  queues?: number[][];
 }
 
 export interface ProcessStats {
@@ -28,12 +30,13 @@ export interface SchedulerData {
   scheduling_algorithm: string;
 }
 
+// Enhanced definition for MLQ gantt chart entries
 export interface MLQGanttChartEntry {
   process_id: number;
   start_time: number;
   end_time: number;
-  queues: number[][];
-  queue_level: number;
+  queues: number[][]; // Array of queue arrays where index is the queue level
+  queue_level: number; // Current active queue level
 }
 
 export interface MLQSchedulerData {
@@ -48,6 +51,7 @@ export interface SchedulerInput {
   quantum?: number;
   num_of_queues?: number;
   aging?: boolean; 
+  aging_threshold?: number;  // Add aging threshold for MLQ_Aging and SJF_Aging algorithms
   processes: {
     p_id: number; 
     arrival_time: number;

@@ -11,6 +11,7 @@ export interface AlgorithmParams {
   numberOfQueues?: number;
   requiresPriority?: boolean;
   maxPriority?: number;
+  agingThreshold?: number;
 }
 
 const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
@@ -20,6 +21,7 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
 }) => {
   const [timeQuantum, setTimeQuantum] = useState<number>(1);
   const [numberOfQueues, setNumberOfQueues] = useState<number>(3);
+  const [agingThreshold, setAgingThreshold] = useState<number>(50);
   const [lastSelectedAlgorithm, setLastSelectedAlgorithm] = useState<string>(selectedAlgorithm);
 
   // Determine if the current algorithm requires priority
@@ -32,6 +34,9 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
   
   // Determine if the algorithm requires number of queues
   const requiresQueues = selectedAlgorithm === 'MLQ' || selectedAlgorithm === 'MLFQ' || selectedAlgorithm === 'MLQ_Aging';
+  
+  // Determine if the algorithm requires aging threshold
+  const requiresAging = selectedAlgorithm === 'SJF_Aging' || selectedAlgorithm === 'MLQ_Aging';
 
   // Reset parameters when algorithm changes
   useEffect(() => {
@@ -43,7 +48,11 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
     if (!requiresQueues && numberOfQueues !== 3) {
       setNumberOfQueues(3);
     }
-  }, [selectedAlgorithm, requiresTimeQuantum, requiresQueues]);
+    
+    if (!requiresAging && agingThreshold !== 50) {
+      setAgingThreshold(50);
+    }
+  }, [selectedAlgorithm, requiresTimeQuantum, requiresQueues, requiresAging]);
   
   // Update params whenever relevant values change, but not on every render
   useEffect(() => {
@@ -72,9 +81,13 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
       }
     }
     
+    if (requiresAging) {
+      params.agingThreshold = agingThreshold;
+    }
+    
     // Only call when parameters change, not when algorithm changes
     onAlgorithmChange(selectedAlgorithm, params);
-  }, [timeQuantum, numberOfQueues]);
+  }, [timeQuantum, numberOfQueues, agingThreshold]);
 
   const handleAlgorithmChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newAlgorithm = e.target.value;
@@ -93,6 +106,13 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
     const value = parseInt(e.target.value);
     if (value > 0) {
       setNumberOfQueues(value);
+    }
+  };
+  
+  const handleAgingThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (value > 0) {
+      setAgingThreshold(value);
     }
   };
   
@@ -171,6 +191,32 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
           </div>
         )}
         
+        {/* Aging Threshold for algorithms with aging */}
+        {requiresAging && (
+          <div>
+            <label htmlFor="agingThreshold" className="block text-sm font-medium text-gray-700 mb-2">
+              Aging Threshold:
+            </label>
+            <input
+              id="agingThreshold"
+              type="number"
+              min="1"
+              max="100"
+              value={agingThreshold}
+              onChange={handleAgingThresholdChange}
+              disabled={disabled}
+              className={`w-full p-2 border border-gray-300 rounded-md ${
+                disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              {selectedAlgorithm === 'SJF_Aging' 
+                ? 'Lower values make aging faster (waiting processes get higher priority sooner)' 
+                : 'Lower values make promotion between queues happen more quickly'}
+            </p>
+          </div>
+        )}
+        
         {requiresQueues && requiresTimeQuantum && (
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-700">
@@ -179,6 +225,15 @@ const AlgorithmSelector: React.FC<AlgorithmSelectorProps> = ({
                 selectedAlgorithm === 'MLQ_Aging' ? 'Multi-Level Queue with Aging' : 
                 'Multi-Level Feedback Queue'
               } requires both time quantum and number of queues settings.
+            </p>
+          </div>
+        )}
+        
+        {/* Help text for algorithms with aging */}
+        {requiresAging && (
+          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-700">
+              <span className="font-medium">Aging:</span> This algorithm uses process aging to prevent starvation by increasing priority of waiting processes over time.
             </p>
           </div>
         )}

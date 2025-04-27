@@ -51,7 +51,12 @@ public:
             current_time = sorted[0].arrival_time;
         }
         
-        ready_queue.push(0);
+        // Add all processes that arrive at the initial time
+        for (int i = 0; i < n; i++) {
+            if (sorted[i].arrival_time <= current_time) {
+                ready_queue.push(i);
+            }
+        }
         
         while (completed_count < n) {
             if (ready_queue.empty()) {

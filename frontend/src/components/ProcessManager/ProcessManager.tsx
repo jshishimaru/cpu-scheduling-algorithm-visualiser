@@ -156,7 +156,7 @@ const ProcessManager: React.FC<ProcessManagerProps> = ({
             <AlgorithmSelector
               selectedAlgorithm={selectedAlgorithm}
               onAlgorithmChange={handleAlgorithmChange}
-              disabled={newProcesses.length > 0}
+              disabled={allProcesses.length > 0}
             />
           </div>
         

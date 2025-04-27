@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { GanttChartEntry } from '../../services/types';
+import { GanttChartEntry, MLQGanttChartEntry } from '../../services/types';
 
 interface MultiLevelQueueProps {
   ganttData: GanttChartEntry[];
@@ -12,20 +12,60 @@ const MultiLevelQueue: React.FC<MultiLevelQueueProps> = ({
   currentTime,
   isPaused = true 
 }) => {
+  // Enhanced debugging - log the full gantt data
+  React.useEffect(() => {
+    console.log("MultiLevelQueue - Full gantt data:", ganttData);
+    if (ganttData.length > 0) {
+      console.log("First entry structure:", ganttData[0]);
+    }
+  }, [ganttData]);
+
   // Find the entry for the current time
   const currentEntry = useMemo(() => {
-    return ganttData.find(
+    const entry = ganttData.find(
       entry => currentTime >= entry.start_time && currentTime < entry.end_time
-    ) || null;
+    );
+    console.log("Current entry found:", entry);
+    return entry || null;
   }, [ganttData, currentTime]);
 
-  // Get queue levels from the ready_queues object
+  // Determine queue levels - handle both queues array and ready_queues object
   const queueLevels = useMemo(() => {
-    if (currentEntry?.ready_queues) {
-      return Object.keys(currentEntry.ready_queues).map(Number).sort((a, b) => a - b);
+    if (!currentEntry) return [];
+
+    // Direct access to queues array (preferred for MLQ)
+    if (currentEntry.queues && Array.isArray(currentEntry.queues)) {
+      console.log("Using queues array format:", currentEntry.queues);
+      // Create a range of numbers from 0 to queues.length-1
+      return Array.from({ length: currentEntry.queues.length }, (_, i) => i);
     }
+
+    // Fallback to ready_queues object format
+    if (currentEntry.ready_queues) {
+      console.log("Using ready_queues object format:", currentEntry.ready_queues);
+      return Array.from(new Set(Object.keys(currentEntry.ready_queues).map(Number))).sort((a, b) => a - b);
+    }
+    
+    console.log("No queue data found in either format");
     return [];
   }, [currentEntry]);
+
+  // Get processes for a specific queue level
+  const getQueuedProcesses = (level: number) => {
+    if (!currentEntry) return [];
+    
+    // Direct access to queues array (preferred for MLQ)
+    if (currentEntry.queues && Array.isArray(currentEntry.queues) && level < currentEntry.queues.length) {
+      return currentEntry.queues[level] || [];
+    }
+    
+    // Fallback to ready_queues object format
+    if (currentEntry.ready_queues && currentEntry.ready_queues[level]) {
+      return currentEntry.ready_queues[level];
+    }
+    
+    return [];
+  };
 
   // Generate color for each process box
   const getProcessColor = (processId: number): string => {
@@ -88,8 +128,50 @@ const MultiLevelQueue: React.FC<MultiLevelQueueProps> = ({
     }
   };
 
-  if (!currentEntry || !currentEntry.ready_queues) {
-    return null;
+  if (!currentEntry) {
+    return (
+      <div className="w-full max-w-4xl mx-auto my-5 p-5 rounded-lg shadow-md bg-white">
+        <h2 className="text-center text-xl font-bold mb-5 text-gray-800">
+          Multi-Level Queue Status
+        </h2>
+        <div className="text-center py-8 text-gray-500">No queue data available at this time.</div>
+      </div>
+    );
+  }
+
+  // Check if any queue data exists - check both formats
+  const hasQueueData = 
+    (currentEntry.queues && Array.isArray(currentEntry.queues) && currentEntry.queues.length > 0) || 
+    (currentEntry.ready_queues && Object.keys(currentEntry.ready_queues).length > 0);
+
+  if (!hasQueueData || queueLevels.length === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto my-5 p-5 rounded-lg shadow-md bg-white">
+        <h2 className="text-center text-xl font-bold mb-5 text-gray-800">
+          Multi-Level Queue Status
+        </h2>
+        <div className="mb-3 flex justify-between items-center">
+          <div className="text-sm font-medium text-gray-500">
+            Current Time: {currentTime.toFixed(1)}
+          </div>
+          <div className="text-sm text-gray-600">
+            {currentEntry?.process_id !== undefined && currentEntry.process_id >= 0 ? (
+              <span>
+                Executing: <span className="font-bold text-indigo-700">P{currentEntry.process_id}</span> 
+                {currentEntry.queue_level !== undefined && ` (Queue ${currentEntry.queue_level})`}
+              </span>
+            ) : currentEntry?.process_id === -1 ? (
+              <span className="font-medium text-amber-600">CPU Idle</span>
+            ) : (
+              <span className="font-medium text-gray-500">
+                {currentTime === 0 ? 'Ready to Start' : 'Execution Complete'}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-center py-8 text-gray-500">Queue data structure not recognized. Check browser console for logs.</div>
+      </div>
+    );
   }
 
   return (
@@ -105,7 +187,8 @@ const MultiLevelQueue: React.FC<MultiLevelQueueProps> = ({
         <div className="text-sm text-gray-600">
           {currentEntry?.process_id !== undefined && currentEntry.process_id >= 0 ? (
             <span>
-              Executing: <span className="font-bold text-indigo-700">P{currentEntry.process_id}</span> (Queue {currentEntry.queue_level})
+              Executing: <span className="font-bold text-indigo-700">P{currentEntry.process_id}</span> 
+              {currentEntry.queue_level !== undefined && ` (Queue ${currentEntry.queue_level})`}
             </span>
           ) : currentEntry?.process_id === -1 ? (
             <span className="font-medium text-amber-600">CPU Idle</span>
@@ -119,7 +202,7 @@ const MultiLevelQueue: React.FC<MultiLevelQueueProps> = ({
       
       <div className="space-y-6">
         {queueLevels.map(level => {
-          const queuedProcesses = currentEntry.ready_queues?.[level] || [];
+          const queuedProcesses = getQueuedProcesses(level);
           
           return (
             <div key={`queue-${level}`} className="border border-gray-200 rounded-lg p-4">

@@ -102,13 +102,25 @@ export class Parser {
   getGanttChart(): GanttChartEntry[] {
     if (this.isMLQType && this.mlqData) {
       // Convert MLQ gantt entries to standard format for visualization
-      return this.mlqData.gantt_chart.map(entry => ({
-        process_id: entry.process_id,
-        start_time: entry.start_time,
-        end_time: entry.end_time,
-        // Use the active queue for this level as the ready queue
-        ready_queue: entry.queues[entry.queue_level] || []
-      }));
+      return this.mlqData.gantt_chart.map(entry => {
+        // Create a properly typed entry with both formats
+        const ganttEntry: GanttChartEntry = {
+          process_id: entry.process_id,
+          start_time: entry.start_time,
+          end_time: entry.end_time,
+          queue_level: entry.queue_level,
+          // Keep the original queues array for direct access
+          queues: entry.queues,
+          // Use the active queue for this level as the ready queue
+          ready_queue: entry.queues[entry.queue_level] || [],
+          // Convert the queues array to the ready_queues object format
+          ready_queues: entry.queues.reduce((acc: {[key: string]: number[]}, queue: number[], index: number) => {
+            acc[index] = queue;
+            return acc;
+          }, {})
+        };
+        return ganttEntry;
+      });
     }
     
     return this.data?.gantt_chart || [];

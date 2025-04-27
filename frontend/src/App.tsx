@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Parser } from './services/parser';
-import { dummySchedulerData } from './data/dummyData';
 import ProcessManager from './components/ProcessManager/ProcessManager';
 import { NewProcessData } from './components/NewProcessForm/NewProcessForm';
 import GraphsContainer from './components/Graphs/GraphsContainer';
@@ -9,23 +8,35 @@ import apiService from './services/apiservice';
 function App() {
   const [parser, setParser] = useState<Parser | null>(null);
   const [selectedChart, setSelectedChart] = useState<string>('turnaround'); // Default chart type
-  const [schedulerData, setSchedulerData] = useState<any>(dummySchedulerData);
+  
+  // Initialize with empty data instead of dummy data
+  const [schedulerData, setSchedulerData] = useState<any>({
+    scheduling_algorithm: "",
+    gantt_chart: [],
+    process_stats: []
+  });
+  
   const [resetKey, setResetKey] = useState<number>(0); // Add a key for resetting components
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Effect to load initial data
+  // Effect to initialize parser with empty data
   useEffect(() => {
-    // Use dummy data for initial render
     const initialParser = new Parser();
-    if (initialParser.parse(dummySchedulerData)) {
+    if (initialParser.parse(schedulerData)) {
       setParser(initialParser);
     }
   }, []);
   
-  const fetchAndParseData = async (newProcesses?: NewProcessData[], algorithm?: string, timeQuantum?: number, numOfQueues?: number) => {
-    if (!newProcesses || newProcesses.length === 0) {
-      console.warn("No processes provided for rescheduling");
+  const fetchAndParseData = async (
+    newProcesses: NewProcessData[], 
+    algorithm: string = 'FCFS', 
+    timeQuantum?: number,
+    numOfQueues?: number,
+    agingThreshold?: number
+  ) => {
+    if (newProcesses.length === 0) {
+      setError("No processes provided");
       return;
     }
 
@@ -38,7 +49,8 @@ function App() {
         newProcesses,
         algorithm || 'FCFS',
         timeQuantum,
-        numOfQueues
+        numOfQueues,
+        agingThreshold
       );
       
       let result = null;
@@ -48,6 +60,10 @@ function App() {
         result = await apiService.scheduleMLQ(schedulerInput);
       } else if (algorithm === 'MLFQ') {
         result = await apiService.scheduleMLFQ(schedulerInput);
+      } else if (algorithm === 'MLQ_Aging') {
+        result = await apiService.scheduleMLQAging(schedulerInput);
+      } else if (algorithm === 'SJF_Aging') {
+        result = await apiService.scheduleSJFAging(schedulerInput);
       } else {
         result = await apiService.scheduleProcesses(schedulerInput);
       }
@@ -78,7 +94,8 @@ function App() {
       newProcesses, 
       algorithm, 
       params?.timeQuantum, 
-      params?.numberOfQueues
+      params?.numberOfQueues,
+      params?.agingThreshold
     );
   };
   

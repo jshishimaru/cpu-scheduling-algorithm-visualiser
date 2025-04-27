@@ -162,11 +162,11 @@ public:
                 result = sjf.schedule(processes);
             } else if (algorithm == "RR") {
                 int quantum = input_json.value("quantum", 1);  // Default quantum to 1 if not provided
-                // RR rr(quantum);
-                // result = rr.schedule(processes);
+                RR rr;
+                result = rr.schedule(processes,quantum);
             } else if (algorithm == "Priority") {
-                // Priority priority;
-                // result = priority.schedule(processes);
+                Priority priority;
+                result = priority.schedule(processes);
             } else if (algorithm == "MLQ") {
 				int num_queues = input_json.value("num_queues", 3);  // Default to 3 queues if not provided
 				int base_quantum = input_json.value("quantum", 2);   // Default base quantum to 2 if not provided
